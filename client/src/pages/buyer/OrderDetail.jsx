@@ -16,10 +16,24 @@ const STEPS = ['Pending', 'Confirmed', 'Shipped', 'Delivered'];
 export default function OrderDetail() {
   const { id } = useParams();
   const [order, setOrder] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  function load() {
+    return api.get(`/orders/${id}`).then((res) => setOrder(res.data));
+  }
 
   useEffect(() => {
-    api.get(`/orders/${id}`).then((res) => setOrder(res.data));
+    load();
   }, [id]);
+
+  async function handleTrack() {
+    setRefreshing(true);
+    try {
+      await load();
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   if (!order) return <p className="py-10 text-center text-gray-400">Loading order...</p>;
 
@@ -87,8 +101,12 @@ export default function OrderDetail() {
         </div>
       </div>
 
-      <button className="flex w-full items-center justify-center gap-2 rounded-full bg-primary-600 py-3 text-sm font-semibold text-white hover:bg-primary-700">
-        <Truck size={16} /> Track Order
+      <button
+        onClick={handleTrack}
+        disabled={refreshing}
+        className="flex w-full items-center justify-center gap-2 rounded-full bg-primary-600 py-3 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
+      >
+        <Truck size={16} /> {refreshing ? 'Checking for updates...' : 'Track Order'}
       </button>
     </div>
   );

@@ -38,3 +38,42 @@ export async function updateUserStatus(req, res) {
   if (!user) return res.status(404).json({ message: 'User not found' });
   res.json(user);
 }
+
+export async function deleteUser(req, res) {
+  const target = await User.findById(req.params.id);
+  if (!target) return res.status(404).json({ message: 'User not found' });
+  if (target.role === 'admin') return res.status(403).json({ message: 'Cannot delete an admin account' });
+  await target.deleteOne();
+  res.json({ message: 'User deleted' });
+}
+
+export async function listAdminProducts(_req, res) {
+  const products = await Product.find().populate('seller', 'name').sort({ createdAt: -1 });
+  res.json(products);
+}
+
+export async function updateProductStatus(req, res) {
+  const { status } = req.body;
+  const product = await Product.findByIdAndUpdate(req.params.id, { status }, { new: true });
+  if (!product) return res.status(404).json({ message: 'Product not found' });
+  res.json(product);
+}
+
+export async function deleteProductAdmin(req, res) {
+  const product = await Product.findByIdAndDelete(req.params.id);
+  if (!product) return res.status(404).json({ message: 'Product not found' });
+  res.json({ message: 'Product deleted' });
+}
+
+export async function updateOrderStatusAdmin(req, res) {
+  const { status } = req.body;
+  const order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true });
+  if (!order) return res.status(404).json({ message: 'Order not found' });
+  res.json(order);
+}
+
+export async function deleteOrderAdmin(req, res) {
+  const order = await Order.findByIdAndDelete(req.params.id);
+  if (!order) return res.status(404).json({ message: 'Order not found' });
+  res.json({ message: 'Order deleted' });
+}

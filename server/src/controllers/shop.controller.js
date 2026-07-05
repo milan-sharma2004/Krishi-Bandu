@@ -10,6 +10,12 @@ export async function createShop(req, res) {
   res.status(201).json(shop);
 }
 
+export async function updateShop(req, res) {
+  const shop = await Shop.findByIdAndUpdate(req.params.id, req.body, { new: true });
+  if (!shop) return res.status(404).json({ message: 'Shop not found' });
+  res.json(shop);
+}
+
 export async function deleteShop(req, res) {
   await Shop.findByIdAndDelete(req.params.id);
   res.json({ message: 'Shop deleted' });

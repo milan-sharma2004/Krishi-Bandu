@@ -28,7 +28,8 @@ export default function Cart() {
         paymentMethod,
       });
       clear();
-      navigate(`/buyer/orders/${res.data._id}`);
+      const orders = res.data;
+      navigate(orders.length === 1 ? `/buyer/orders/${orders[0]._id}` : '/buyer/orders');
     } catch (err) {
       setError(err?.response?.data?.message || 'Could not place order');
     } finally {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Trash2 } from 'lucide-react';
 import api from '../../api/client.js';
 
 const STATUS_STYLE = {
@@ -9,12 +10,27 @@ const STATUS_STYLE = {
   Cancelled: 'bg-red-100 text-red-700',
 };
 
+const STATUS_OPTIONS = Object.keys(STATUS_STYLE);
+
 export default function Orders() {
   const [orders, setOrders] = useState([]);
 
-  useEffect(() => {
+  function load() {
     api.get('/orders/all').then((res) => setOrders(res.data));
-  }, []);
+  }
+
+  useEffect(load, []);
+
+  async function changeStatus(order, status) {
+    await api.patch(`/admin/orders/${order._id}/status`, { status });
+    load();
+  }
+
+  async function handleDelete(order) {
+    if (!confirm(`Delete order #${order.orderCode}? This cannot be undone.`)) return;
+    await api.delete(`/admin/orders/${order._id}`);
+    load();
+  }
 
   return (
     <div className="space-y-6">
@@ -33,6 +49,7 @@ export default function Orders() {
               <th className="px-4 py-3 font-medium">Amount (Rs.)</th>
               <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 font-medium">Date</th>
+              <th className="px-4 py-3 font-medium">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -43,9 +60,22 @@ export default function Orders() {
                 <td className="px-4 py-3 text-gray-600">{o.seller?.name}</td>
                 <td className="px-4 py-3 text-gray-600">{o.totalAmount}</td>
                 <td className="px-4 py-3">
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLE[o.status]}`}>{o.status}</span>
+                  <select
+                    value={o.status}
+                    onChange={(e) => changeStatus(o, e.target.value)}
+                    className={`rounded-full border-0 px-2 py-0.5 text-xs font-medium ${STATUS_STYLE[o.status]}`}
+                  >
+                    {STATUS_OPTIONS.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
                 </td>
                 <td className="px-4 py-3 text-gray-500">{new Date(o.createdAt).toLocaleDateString()}</td>
+                <td className="px-4 py-3">
+                  <button onClick={() => handleDelete(o)} className="text-gray-400 hover:text-red-500">
+                    <Trash2 size={14} />
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>

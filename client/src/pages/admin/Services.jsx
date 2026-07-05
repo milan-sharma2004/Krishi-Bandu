@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, X, Trash2 } from 'lucide-react';
+import { Plus, X, Pencil, Trash2 } from 'lucide-react';
 import api from '../../api/client.js';
 
 const EMPTY_FORM = { name: '', category: 'Tractor Service', provider: '', location: '', contact: '' };
@@ -7,6 +7,7 @@ const EMPTY_FORM = { name: '', category: 'Tractor Service', provider: '', locati
 export default function Services() {
   const [services, setServices] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
 
   function load() {
@@ -18,10 +19,27 @@ export default function Services() {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
+  function startEdit(s) {
+    setEditingId(s._id);
+    setForm({ name: s.name, category: s.category, provider: s.provider, location: s.location, contact: s.contact });
+    setShowForm(true);
+  }
+
+  function startNew() {
+    setEditingId(null);
+    setForm(EMPTY_FORM);
+    setShowForm(true);
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
-    await api.post('/services', form);
+    if (editingId) {
+      await api.put(`/services/${editingId}`, form);
+    } else {
+      await api.post('/services', form);
+    }
     setForm(EMPTY_FORM);
+    setEditingId(null);
     setShowForm(false);
     load();
   }
@@ -39,7 +57,7 @@ export default function Services() {
           <h1 className="text-2xl font-bold text-gray-900">Local Services</h1>
           <p className="text-sm text-gray-500">Manage tractor, veterinary, and officer contacts.</p>
         </div>
-        <button onClick={() => setShowForm((s) => !s)} className="flex items-center gap-2 rounded-full bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700">
+        <button onClick={() => (showForm ? setShowForm(false) : startNew())} className="flex items-center gap-2 rounded-full bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700">
           {showForm ? <X size={16} /> : <Plus size={16} />}
           {showForm ? 'Cancel' : 'Add Service'}
         </button>
@@ -60,7 +78,9 @@ export default function Services() {
           <input required placeholder="Provider" value={form.provider} onChange={(e) => update('provider', e.target.value)} className="rounded-lg border border-gray-300 px-3 py-2 text-sm" />
           <input required placeholder="Location" value={form.location} onChange={(e) => update('location', e.target.value)} className="rounded-lg border border-gray-300 px-3 py-2 text-sm" />
           <input required placeholder="Contact Number" value={form.contact} onChange={(e) => update('contact', e.target.value)} className="rounded-lg border border-gray-300 px-3 py-2 text-sm" />
-          <button type="submit" className="rounded-lg bg-primary-600 py-2 text-sm font-semibold text-white hover:bg-primary-700">Save Service</button>
+          <button type="submit" className="rounded-lg bg-primary-600 py-2 text-sm font-semibold text-white hover:bg-primary-700">
+            {editingId ? 'Update Service' : 'Save Service'}
+          </button>
         </form>
       )}
 
@@ -83,9 +103,14 @@ export default function Services() {
                 <td className="px-4 py-3 text-gray-600">{s.location}</td>
                 <td className="px-4 py-3 text-gray-600">{s.contact}</td>
                 <td className="px-4 py-3">
-                  <button onClick={() => handleDelete(s._id)} className="text-gray-400 hover:text-red-500">
-                    <Trash2 size={15} />
-                  </button>
+                  <div className="flex gap-2">
+                    <button onClick={() => startEdit(s)} className="text-gray-400 hover:text-primary-600">
+                      <Pencil size={15} />
+                    </button>
+                    <button onClick={() => handleDelete(s._id)} className="text-gray-400 hover:text-red-500">
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

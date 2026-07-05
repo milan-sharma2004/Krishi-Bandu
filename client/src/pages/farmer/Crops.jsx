@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Pencil, Trash2 } from 'lucide-react';
 import api from '../../api/client.js';
 import Trend from '../../components/Trend.jsx';
 
@@ -8,6 +8,7 @@ const EMPTY_FORM = { crop: '', variety: '', areaRopani: '', productionKg: '', av
 export default function Crops() {
   const [records, setRecords] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
 
@@ -21,22 +22,53 @@ export default function Crops() {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
+  function startEdit(r) {
+    setEditingId(r._id);
+    setForm({
+      crop: r.crop,
+      variety: r.variety || '',
+      areaRopani: r.areaRopani,
+      productionKg: r.productionKg,
+      avgPrice: r.avgPrice,
+      season: r.season || '',
+    });
+    setShowForm(true);
+  }
+
+  function startNew() {
+    setEditingId(null);
+    setForm(EMPTY_FORM);
+    setShowForm(true);
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setSaving(true);
+    const payload = {
+      ...form,
+      areaRopani: Number(form.areaRopani),
+      productionKg: Number(form.productionKg),
+      avgPrice: Number(form.avgPrice),
+    };
     try {
-      await api.post('/crop-records', {
-        ...form,
-        areaRopani: Number(form.areaRopani),
-        productionKg: Number(form.productionKg),
-        avgPrice: Number(form.avgPrice),
-      });
+      if (editingId) {
+        await api.put(`/crop-records/${editingId}`, payload);
+      } else {
+        await api.post('/crop-records', payload);
+      }
       setForm(EMPTY_FORM);
+      setEditingId(null);
       setShowForm(false);
       load();
     } finally {
       setSaving(false);
     }
+  }
+
+  async function handleDelete(id) {
+    if (!confirm('Delete this crop record?')) return;
+    await api.delete(`/crop-records/${id}`);
+    load();
   }
 
   return (
@@ -47,7 +79,7 @@ export default function Crops() {
           <p className="text-sm text-gray-500">Track your seasonal crop performance and pricing.</p>
         </div>
         <button
-          onClick={() => setShowForm((s) => !s)}
+          onClick={() => (showForm ? setShowForm(false) : startNew())}
           className="flex items-center gap-2 rounded-full bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"
         >
           {showForm ? <X size={16} /> : <Plus size={16} />}
@@ -64,7 +96,7 @@ export default function Crops() {
           <input required type="number" placeholder="Production (kg)" value={form.productionKg} onChange={(e) => update('productionKg', e.target.value)} className="rounded-lg border border-gray-300 px-3 py-2 text-sm" />
           <input required type="number" placeholder="Avg. Price (Rs./kg)" value={form.avgPrice} onChange={(e) => update('avgPrice', e.target.value)} className="rounded-lg border border-gray-300 px-3 py-2 text-sm" />
           <button disabled={saving} type="submit" className="sm:col-span-3 rounded-lg bg-primary-600 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60">
-            {saving ? 'Saving...' : 'Save Record'}
+            {saving ? 'Saving...' : editingId ? 'Update Record' : 'Save Record'}
           </button>
         </form>
       )}
@@ -80,6 +112,7 @@ export default function Crops() {
               <th className="px-4 py-3 font-medium">Production (kg)</th>
               <th className="px-4 py-3 font-medium">Avg. Price (Rs./kg)</th>
               <th className="px-4 py-3 font-medium">Trend</th>
+              <th className="px-4 py-3 font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -94,11 +127,21 @@ export default function Crops() {
                 <td className="px-4 py-3">
                   <Trend trend={r.trend} />
                 </td>
+                <td className="px-4 py-3">
+                  <div className="flex gap-2">
+                    <button onClick={() => startEdit(r)} className="flex items-center gap-1 rounded-full bg-primary-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-700">
+                      <Pencil size={13} /> Edit
+                    </button>
+                    <button onClick={() => handleDelete(r._id)} className="flex items-center gap-1 rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50">
+                      <Trash2 size={13} /> Delete
+                    </button>
+                  </div>
+                </td>
               </tr>
             ))}
             {records.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
+                <td colSpan={8} className="px-4 py-8 text-center text-gray-400">
                   No crop records yet. Add your first one above.
                 </td>
               </tr>

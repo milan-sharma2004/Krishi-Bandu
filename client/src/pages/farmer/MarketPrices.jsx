@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { TrendingUp } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import api from '../../api/client.js';
 
 export default function MarketPrices() {
@@ -9,12 +10,29 @@ export default function MarketPrices() {
     api.get('/products').then((res) => setProducts(res.data));
   }, []);
 
+  const chartData = products.map((p) => ({ name: p.name, price: p.pricePerKg }));
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Market Prices</h1>
         <p className="text-sm text-gray-500">Daily prices reported across Krishi Bandu marketplaces.</p>
       </div>
+
+      {chartData.length > 0 && (
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <p className="mb-4 text-sm font-semibold text-gray-500">Current Price by Product (Rs./kg)</p>
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 11 }} />
+              <Tooltip />
+              <Bar dataKey="price" fill="#16a34a" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
 
       <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
         <table className="w-full text-sm">

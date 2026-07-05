@@ -13,24 +13,31 @@ export async function createOrder(req, res) {
   const productDocs = await Product.find({ _id: { $in: items.map((i) => i.product) } });
   if (!productDocs.length) return res.status(400).json({ message: 'Invalid products' });
 
-  const seller = productDocs[0].seller;
-  const enrichedItems = items.map((i) => {
+  const itemsBySeller = new Map();
+  for (const i of items) {
     const p = productDocs.find((pd) => pd._id.toString() === i.product);
-    return { product: p._id, name: p.name, quantity: i.quantity, price: p.pricePerKg };
-  });
-  const totalAmount = enrichedItems.reduce((sum, i) => sum + i.quantity * i.price, 0);
+    if (!p) continue;
+    const sellerId = p.seller.toString();
+    if (!itemsBySeller.has(sellerId)) itemsBySeller.set(sellerId, []);
+    itemsBySeller.get(sellerId).push({ product: p._id, name: p.name, quantity: i.quantity, price: p.pricePerKg });
+  }
 
-  const order = await Order.create({
-    orderCode: generateOrderCode(),
-    buyer: req.user._id,
-    seller,
-    items: enrichedItems,
-    totalAmount,
-    deliveryAddress,
-    paymentMethod: paymentMethod || 'Cash on Delivery',
-  });
+  const orders = await Promise.all(
+    Array.from(itemsBySeller.entries()).map(([sellerId, enrichedItems]) => {
+      const totalAmount = enrichedItems.reduce((sum, i) => sum + i.quantity * i.price, 0);
+      return Order.create({
+        orderCode: generateOrderCode(),
+        buyer: req.user._id,
+        seller: sellerId,
+        items: enrichedItems,
+        totalAmount,
+        deliveryAddress,
+        paymentMethod: paymentMethod || 'Cash on Delivery',
+      });
+    })
+  );
 
-  res.status(201).json(order);
+  res.status(201).json(orders);
 }
 
 export async function myOrders(req, res) {
@@ -46,6 +53,13 @@ export async function sellerOrders(req, res) {
 export async function getOrder(req, res) {
   const order = await Order.findById(req.params.id).populate('buyer', 'name location phone').populate('seller', 'name location phone');
   if (!order) return res.status(404).json({ message: 'Order not found' });
+
+  const isBuyer = order.buyer._id.toString() === req.user._id.toString();
+  const isSeller = order.seller._id.toString() === req.user._id.toString();
+  if (!isBuyer && !isSeller && req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Forbidden' });
+  }
+
   res.json(order);
 }
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Trash2 } from 'lucide-react';
 import api from '../../api/client.js';
 
 const ROLE_STYLE = {
@@ -20,6 +21,12 @@ export default function Users() {
   async function toggleStatus(user) {
     const status = user.status === 'active' ? 'suspended' : 'active';
     await api.patch(`/admin/users/${user._id}/status`, { status });
+    load();
+  }
+
+  async function handleDelete(user) {
+    if (!confirm(`Delete ${user.name}'s account? This cannot be undone.`)) return;
+    await api.delete(`/admin/users/${user._id}`);
     load();
   }
 
@@ -68,9 +75,14 @@ export default function Users() {
                 </td>
                 <td className="px-4 py-3">
                   {u.role !== 'admin' && (
-                    <button onClick={() => toggleStatus(u)} className="text-xs font-semibold text-primary-600 hover:underline">
-                      {u.status === 'active' ? 'Suspend' : 'Activate'}
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <button onClick={() => toggleStatus(u)} className="text-xs font-semibold text-primary-600 hover:underline">
+                        {u.status === 'active' ? 'Suspend' : 'Activate'}
+                      </button>
+                      <button onClick={() => handleDelete(u)} className="text-gray-400 hover:text-red-500">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   )}
                 </td>
               </tr>

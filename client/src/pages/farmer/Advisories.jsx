@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { CloudRain, Bug, Leaf, Info } from 'lucide-react';
 import api from '../../api/client.js';
 
@@ -8,13 +9,26 @@ const SEVERITY_STYLE = {
   medium: 'bg-amber-50 text-amber-700 border-amber-200',
   low: 'bg-primary-50 text-primary-700 border-primary-200',
 };
+const TYPES = ['All', 'weather', 'pest', 'fertilizer', 'subsidy'];
 
 export default function Advisories() {
   const [advisories, setAdvisories] = useState([]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeType = searchParams.get('type') || 'All';
 
   useEffect(() => {
     api.get('/advisories').then((res) => setAdvisories(res.data));
   }, []);
+
+  function setType(type) {
+    if (type === 'All') {
+      setSearchParams({});
+    } else {
+      setSearchParams({ type });
+    }
+  }
+
+  const filtered = activeType === 'All' ? advisories : advisories.filter((a) => a.type === activeType);
 
   return (
     <div className="space-y-6">
@@ -23,8 +37,22 @@ export default function Advisories() {
         <p className="text-sm text-gray-500">Weather, pest, fertilizer, and subsidy alerts for your region.</p>
       </div>
 
+      <div className="flex flex-wrap gap-2">
+        {TYPES.map((type) => (
+          <button
+            key={type}
+            onClick={() => setType(type)}
+            className={`rounded-full px-4 py-1.5 text-sm font-medium capitalize ${
+              activeType === type ? 'bg-primary-600 text-white' : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            {type}
+          </button>
+        ))}
+      </div>
+
       <div className="space-y-3">
-        {advisories.map((a) => {
+        {filtered.map((a) => {
           const Icon = ICON[a.type] || Info;
           return (
             <div key={a._id} className={`flex items-start gap-3 rounded-xl border p-4 shadow-sm ${SEVERITY_STYLE[a.severity]}`}>
@@ -38,7 +66,7 @@ export default function Advisories() {
             </div>
           );
         })}
-        {advisories.length === 0 && (
+        {filtered.length === 0 && (
           <p className="rounded-xl border border-gray-200 bg-white p-8 text-center text-gray-400 shadow-sm">
             No advisories at the moment.
           </p>
