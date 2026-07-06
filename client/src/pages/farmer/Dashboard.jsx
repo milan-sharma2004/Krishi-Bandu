@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  CloudSun,
   Plus,
   Receipt,
   TrendingUp,
@@ -16,15 +15,9 @@ import {
 } from 'lucide-react';
 import api from '../../api/client.js';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { useWeather } from '../../hooks/useWeather.js';
+import { weatherIconFor } from '../../utils/weatherIcon.js';
 import Trend from '../../components/Trend.jsx';
-
-const FORECAST_TODAY = { temp: '28°C', sub: 'Partly Cloudy', wind: '8 km/h' };
-const FORECAST_NEXT = [
-  { label: 'Tomorrow', high: '31°C', low: '19°C' },
-  { label: 'Day After', high: '29°C', low: '18°C' },
-];
-
-const RECOMMENDED = ['Paddy', 'Maize', 'Tomato', 'Potato', 'Cauliflower'];
 
 const ADVISORY_ICON = {
   weather: CloudRain,
@@ -48,11 +41,17 @@ export default function Dashboard() {
   const { user } = useAuth();
   const [records, setRecords] = useState([]);
   const [advisories, setAdvisories] = useState([]);
+  const [recommendation, setRecommendation] = useState(null);
+  const { weather } = useWeather(user?.location);
 
   useEffect(() => {
     api.get('/crop-records/mine').then((res) => setRecords(res.data));
     api.get('/advisories').then((res) => setAdvisories(res.data));
+    api.get('/recommendations').then((res) => setRecommendation(res.data));
   }, []);
+
+  const outbreakAlerts = advisories.filter((a) => a.type === 'pest' && a.severity === 'high');
+  const TodayIcon = weather ? weatherIconFor(weather.daily?.[0]?.weatherCode) : null;
 
   return (
     <div className="space-y-6">
@@ -61,37 +60,65 @@ export default function Dashboard() {
         <p className="text-sm text-gray-500">Here's what's happening on your farm today.</p>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm lg:col-span-2">
-          <p className="mb-3 text-sm font-semibold text-gray-500">Weather Update — Today</p>
-          <div className="flex flex-wrap items-center gap-6">
-            <div className="flex items-center gap-3">
-              <CloudSun size={40} className="text-orange-400" />
-              <div>
-                <p className="text-3xl font-bold text-gray-900">{FORECAST_TODAY.temp}</p>
-                <p className="text-sm text-gray-500">
-                  {FORECAST_TODAY.sub} · Wind: {FORECAST_TODAY.wind}
-                </p>
-              </div>
-            </div>
-            <div className="ml-auto flex gap-6 border-l border-gray-100 pl-6">
-              {FORECAST_NEXT.map((f) => (
-                <div key={f.label} className="text-center">
-                  <p className="mb-1 text-xs font-medium text-gray-500">{f.label}</p>
-                  <CloudSun size={20} className="mx-auto mb-1 text-orange-300" />
-                  <p className="text-sm font-semibold text-gray-800">
-                    {f.high} / {f.low}
-                  </p>
-                </div>
-              ))}
+      {outbreakAlerts.length > 0 && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+          <div className="flex items-start gap-2">
+            <Bug size={18} className="mt-0.5 shrink-0 text-red-600" />
+            <div>
+              <p className="text-sm font-semibold text-red-800">Disease / Pest Outbreak Alert</p>
+              <ul className="mt-1 space-y-0.5 text-sm text-red-700">
+                {outbreakAlerts.map((a) => (
+                  <li key={a._id}>
+                    {a.message} — {a.region}
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </div>
+      )}
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm lg:col-span-2">
+          <p className="mb-3 text-sm font-semibold text-gray-500">Weather Update — Today</p>
+          {weather ? (
+            <div className="flex flex-wrap items-center gap-6">
+              <div className="flex items-center gap-3">
+                {TodayIcon && <TodayIcon size={40} className="text-orange-400" />}
+                <div>
+                  <p className="text-3xl font-bold text-gray-900">{weather.today.temp}°C</p>
+                  <p className="text-sm text-gray-500">
+                    {weather.today.condition} · Wind: {weather.today.windKph} km/h
+                  </p>
+                </div>
+              </div>
+              <div className="ml-auto flex gap-6 border-l border-gray-100 pl-6">
+                {weather.upcoming.map((f, i) => {
+                  const Icon = weatherIconFor(f.weatherCode);
+                  return (
+                    <div key={f.date} className="text-center">
+                      <p className="mb-1 text-xs font-medium text-gray-500">
+                        {i === 0 ? 'Tomorrow' : new Date(f.date).toLocaleDateString(undefined, { weekday: 'short' })}
+                      </p>
+                      <Icon size={20} className="mx-auto mb-1 text-orange-300" />
+                      <p className="text-sm font-semibold text-gray-800">
+                        {f.high}° / {f.low}°
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-400">Loading live weather...</p>
+          )}
+        </div>
 
         <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="mb-3 text-sm font-semibold text-gray-500">Recommended for You (Upcoming Season)</p>
+          <p className="mb-1 text-sm font-semibold text-gray-500">Recommended for You</p>
+          {recommendation && <p className="mb-3 text-xs text-gray-400">{recommendation.season} season</p>}
           <ul className="space-y-2">
-            {RECOMMENDED.map((crop) => (
+            {(recommendation?.crops || []).map((crop) => (
               <li key={crop} className="flex items-center justify-between text-sm text-gray-700">
                 {crop}
                 <span className="flex items-center gap-1 text-xs font-medium text-primary-600">

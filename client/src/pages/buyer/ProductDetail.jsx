@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Minus, Plus, ShoppingCart, MapPin, User } from 'lucide-react';
 import api from '../../api/client.js';
 import { useCart } from '../../context/CartContext.jsx';
+import { mediaUrl } from '../../utils/mediaUrl.js';
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -29,7 +30,7 @@ export default function ProductDetail() {
   return (
     <div className="grid gap-8 md:grid-cols-2">
       <img
-        src={product.imageUrl || 'https://placehold.co/500x400?text=%20'}
+        src={mediaUrl(product.imageUrl) || 'https://placehold.co/500x400?text=%20'}
         alt={product.name}
         className="h-80 w-full rounded-2xl object-cover"
       />

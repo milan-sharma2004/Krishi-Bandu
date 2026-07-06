@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import api from '../../api/client.js';
+import { useToast } from '../../context/ToastContext.jsx';
 
 const STATUS_STYLE = {
   Pending: 'bg-gray-100 text-gray-600',
@@ -13,6 +14,7 @@ const STATUS_STYLE = {
 const STATUS_OPTIONS = Object.keys(STATUS_STYLE);
 
 export default function Orders() {
+  const { notify } = useToast();
   const [orders, setOrders] = useState([]);
 
   function load() {
@@ -23,12 +25,14 @@ export default function Orders() {
 
   async function changeStatus(order, status) {
     await api.patch(`/admin/orders/${order._id}/status`, { status });
+    notify(`Order #${order.orderCode} marked ${status}.`, 'success');
     load();
   }
 
   async function handleDelete(order) {
     if (!confirm(`Delete order #${order.orderCode}? This cannot be undone.`)) return;
     await api.delete(`/admin/orders/${order._id}`);
+    notify(`Order #${order.orderCode} deleted.`, 'success');
     load();
   }
 

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Search, ClipboardList, ArrowRight } from 'lucide-react';
 import api from '../../api/client.js';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { mediaUrl } from '../../utils/mediaUrl.js';
 
 export default function Home() {
   const { user } = useAuth();
@@ -48,7 +49,7 @@ export default function Home() {
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {products.map((p) => (
             <Link key={p._id} to={`/buyer/products/${p._id}`} className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm hover:shadow-md">
-              <img src={p.imageUrl || 'https://placehold.co/200x140?text=%20'} alt={p.name} className="mb-2 h-24 w-full rounded-lg object-cover" />
+              <img src={mediaUrl(p.imageUrl) || 'https://placehold.co/200x140?text=%20'} alt={p.name} className="mb-2 h-24 w-full rounded-lg object-cover" />
               <p className="truncate text-sm font-semibold text-gray-900">{p.name}</p>
               <p className="text-xs text-gray-500">Rs {p.pricePerKg}/kg</p>
             </Link>

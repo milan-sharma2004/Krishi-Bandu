@@ -4,10 +4,13 @@ import { Minus, Plus, Trash2 } from 'lucide-react';
 import api from '../../api/client.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useCart } from '../../context/CartContext.jsx';
+import { useToast } from '../../context/ToastContext.jsx';
+import { mediaUrl } from '../../utils/mediaUrl.js';
 
 export default function Cart() {
   const { items, updateQuantity, removeItem, clear, total } = useCart();
   const { user } = useAuth();
+  const { notify } = useToast();
   const navigate = useNavigate();
   const [address, setAddress] = useState(user?.location || '');
   const [paymentMethod, setPaymentMethod] = useState('Cash on Delivery');
@@ -29,9 +32,12 @@ export default function Cart() {
       });
       clear();
       const orders = res.data;
+      notify(orders.length === 1 ? 'Order placed successfully!' : `${orders.length} orders placed successfully!`, 'success');
       navigate(orders.length === 1 ? `/buyer/orders/${orders[0]._id}` : '/buyer/orders');
     } catch (err) {
-      setError(err?.response?.data?.message || 'Could not place order');
+      const message = err?.response?.data?.message || 'Could not place order';
+      setError(message);
+      notify(message, 'error');
     } finally {
       setPlacing(false);
     }
@@ -54,7 +60,7 @@ export default function Cart() {
         <h1 className="text-2xl font-bold text-gray-900">Your Cart</h1>
         {items.map(({ product, quantity }) => (
           <div key={product._id} className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-            <img src={product.imageUrl || 'https://placehold.co/80x80?text=%20'} alt={product.name} className="h-16 w-16 rounded-lg object-cover" />
+            <img src={mediaUrl(product.imageUrl) || 'https://placehold.co/80x80?text=%20'} alt={product.name} className="h-16 w-16 rounded-lg object-cover" />
             <div className="min-w-0 flex-1">
               <p className="font-semibold text-gray-900">{product.name}</p>
               <p className="text-sm text-gray-500">Rs {product.pricePerKg}/kg</p>

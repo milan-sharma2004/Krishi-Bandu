@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Logo from '../../components/Logo.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { useToast } from '../../context/ToastContext.jsx';
 
 export default function Login() {
   const { login } = useAuth();
+  const { notify } = useToast();
   const navigate = useNavigate();
   const [email, setEmail] = useState('ravi@krishibandu.com');
   const [password, setPassword] = useState('password123');
@@ -17,6 +19,7 @@ export default function Login() {
     setLoading(true);
     try {
       const user = await login(email, password);
+      notify(`Welcome back, ${user.name.split(' ')[0]}!`, 'success');
       if (user.role === 'farmer') navigate('/farmer');
       else if (user.role === 'buyer') navigate('/buyer');
       else navigate('/admin');

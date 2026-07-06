@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Plus, X, Pencil, Trash2 } from 'lucide-react';
+import { Plus, X, Pencil, Trash2, ImagePlus } from 'lucide-react';
 import api from '../../api/client.js';
+import { useToast } from '../../context/ToastContext.jsx';
+import { mediaUrl } from '../../utils/mediaUrl.js';
 
 const EMPTY_FORM = {
   name: '',
@@ -14,11 +16,14 @@ const EMPTY_FORM = {
 };
 
 export default function MyProducts() {
+  const { notify } = useToast();
   const [products, setProducts] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
 
   function load() {
     api.get('/products/mine').then((res) => setProducts(res.data));
@@ -62,13 +67,17 @@ export default function MyProducts() {
     try {
       if (editingId) {
         await api.put(`/products/${editingId}`, payload);
+        notify('Product updated.', 'success');
       } else {
         await api.post('/products', payload);
+        notify('Product added.', 'success');
       }
       setShowForm(false);
       setForm(EMPTY_FORM);
       setEditingId(null);
       load();
+    } catch (err) {
+      notify(err?.response?.data?.message || 'Could not save product.', 'error');
     } finally {
       setSaving(false);
     }
@@ -77,7 +86,25 @@ export default function MyProducts() {
   async function handleDelete(id) {
     if (!confirm('Delete this product listing?')) return;
     await api.delete(`/products/${id}`);
+    notify('Product deleted.', 'success');
     load();
+  }
+
+  async function handleImageChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setUploadError('');
+    try {
+      const body = new FormData();
+      body.append('image', file);
+      const res = await api.post('/uploads', body, { headers: { 'Content-Type': 'multipart/form-data' } });
+      update('imageUrl', res.data.url);
+    } catch (err) {
+      setUploadError(err?.response?.data?.message || 'Upload failed');
+    } finally {
+      setUploading(false);
+    }
   }
 
   return (
@@ -109,12 +136,30 @@ export default function MyProducts() {
           <input required type="number" placeholder="Price per kg (Rs.)" value={form.pricePerKg} onChange={(e) => update('pricePerKg', e.target.value)} className="rounded-lg border border-gray-300 px-3 py-2 text-sm" />
           <input required type="number" placeholder="Available Qty (kg)" value={form.availableQty} onChange={(e) => update('availableQty', e.target.value)} className="rounded-lg border border-gray-300 px-3 py-2 text-sm" />
           <input placeholder="Location" value={form.location} onChange={(e) => update('location', e.target.value)} className="rounded-lg border border-gray-300 px-3 py-2 text-sm" />
-          <input placeholder="Image URL" value={form.imageUrl} onChange={(e) => update('imageUrl', e.target.value)} className="rounded-lg border border-gray-300 px-3 py-2 text-sm sm:col-span-2" />
           <select value={form.listingType} onChange={(e) => update('listingType', e.target.value)} className="rounded-lg border border-gray-300 px-3 py-2 text-sm">
             <option value="retail">Retail</option>
             <option value="bulk">Bulk</option>
           </select>
-          <button disabled={saving} type="submit" className="sm:col-span-3 rounded-lg bg-primary-600 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60">
+
+          <div className="flex flex-wrap items-center gap-3 sm:col-span-3">
+            {form.imageUrl && (
+              <img src={mediaUrl(form.imageUrl)} alt="Preview" className="h-14 w-14 rounded-lg border border-gray-200 object-cover" />
+            )}
+            <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-gray-300 px-3 py-2 text-sm text-gray-600 hover:border-primary-400 hover:text-primary-700">
+              <ImagePlus size={16} />
+              {uploading ? 'Uploading...' : 'Upload Photo'}
+              <input type="file" accept="image/*" onChange={handleImageChange} disabled={uploading} className="hidden" />
+            </label>
+            <input
+              placeholder="or paste an Image URL"
+              value={form.imageUrl}
+              onChange={(e) => update('imageUrl', e.target.value)}
+              className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            />
+          </div>
+          {uploadError && <p className="text-xs text-red-600 sm:col-span-3">{uploadError}</p>}
+
+          <button disabled={saving || uploading} type="submit" className="sm:col-span-3 rounded-lg bg-primary-600 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60">
             {saving ? 'Saving...' : editingId ? 'Update Product' : 'Add Product'}
           </button>
         </form>
@@ -124,7 +169,7 @@ export default function MyProducts() {
         {products.map((p) => (
           <div key={p._id} className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
             <img
-              src={p.imageUrl || 'https://placehold.co/80x80?text=%20'}
+              src={mediaUrl(p.imageUrl) || 'https://placehold.co/80x80?text=%20'}
               alt={p.name}
               className="h-16 w-16 shrink-0 rounded-lg object-cover"
             />

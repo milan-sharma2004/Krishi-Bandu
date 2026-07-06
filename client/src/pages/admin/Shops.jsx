@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Plus, X, Pencil, Trash2 } from 'lucide-react';
 import api from '../../api/client.js';
+import { useToast } from '../../context/ToastContext.jsx';
 
 const EMPTY_FORM = { name: '', location: '', distanceKm: '', tags: '' };
 
 export default function Shops() {
+  const { notify } = useToast();
   const [shops, setShops] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -40,8 +42,10 @@ export default function Shops() {
     };
     if (editingId) {
       await api.put(`/shops/${editingId}`, payload);
+      notify('Shop updated.', 'success');
     } else {
       await api.post('/shops', payload);
+      notify('Shop added.', 'success');
     }
     setForm(EMPTY_FORM);
     setEditingId(null);
@@ -52,6 +56,7 @@ export default function Shops() {
   async function handleDelete(id) {
     if (!confirm('Delete this shop?')) return;
     await api.delete(`/shops/${id}`);
+    notify('Shop deleted.', 'success');
     load();
   }
 

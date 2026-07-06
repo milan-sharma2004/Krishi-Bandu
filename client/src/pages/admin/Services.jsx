@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Plus, X, Pencil, Trash2 } from 'lucide-react';
 import api from '../../api/client.js';
+import { useToast } from '../../context/ToastContext.jsx';
 
 const EMPTY_FORM = { name: '', category: 'Tractor Service', provider: '', location: '', contact: '' };
 
 export default function Services() {
+  const { notify } = useToast();
   const [services, setServices] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -35,8 +37,10 @@ export default function Services() {
     e.preventDefault();
     if (editingId) {
       await api.put(`/services/${editingId}`, form);
+      notify('Service updated.', 'success');
     } else {
       await api.post('/services', form);
+      notify('Service added.', 'success');
     }
     setForm(EMPTY_FORM);
     setEditingId(null);
@@ -47,6 +51,7 @@ export default function Services() {
   async function handleDelete(id) {
     if (!confirm('Delete this service?')) return;
     await api.delete(`/services/${id}`);
+    notify('Service deleted.', 'success');
     load();
   }
 

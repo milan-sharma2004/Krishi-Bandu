@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Plus, X, Pencil, Trash2 } from 'lucide-react';
 import api from '../../api/client.js';
+import { useToast } from '../../context/ToastContext.jsx';
 import Trend from '../../components/Trend.jsx';
 
 const EMPTY_FORM = { crop: '', variety: '', areaRopani: '', productionKg: '', avgPrice: '', season: '' };
 
 export default function Crops() {
+  const { notify } = useToast();
   const [records, setRecords] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -53,13 +55,17 @@ export default function Crops() {
     try {
       if (editingId) {
         await api.put(`/crop-records/${editingId}`, payload);
+        notify('Crop record updated.', 'success');
       } else {
         await api.post('/crop-records', payload);
+        notify('Crop record added.', 'success');
       }
       setForm(EMPTY_FORM);
       setEditingId(null);
       setShowForm(false);
       load();
+    } catch (err) {
+      notify(err?.response?.data?.message || 'Could not save crop record.', 'error');
     } finally {
       setSaving(false);
     }
@@ -68,6 +74,7 @@ export default function Crops() {
   async function handleDelete(id) {
     if (!confirm('Delete this crop record?')) return;
     await api.delete(`/crop-records/${id}`);
+    notify('Crop record deleted.', 'success');
     load();
   }
 

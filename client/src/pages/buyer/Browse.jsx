@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import api from '../../api/client.js';
+import { mediaUrl } from '../../utils/mediaUrl.js';
 
 const CATEGORIES = ['All', 'Crops', 'Seeds', 'Organic', 'Tools'];
 
@@ -51,7 +52,7 @@ export default function Browse() {
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {products.map((p) => (
           <Link key={p._id} to={`/buyer/products/${p._id}`} className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm hover:shadow-md">
-            <img src={p.imageUrl || 'https://placehold.co/200x140?text=%20'} alt={p.name} className="mb-2 h-28 w-full rounded-lg object-cover" />
+            <img src={mediaUrl(p.imageUrl) || 'https://placehold.co/200x140?text=%20'} alt={p.name} className="mb-2 h-28 w-full rounded-lg object-cover" />
             <p className="truncate text-sm font-semibold text-gray-900">
               {p.name} {p.variety && <span className="font-normal text-gray-500">({p.variety})</span>}
             </p>

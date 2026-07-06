@@ -1,6 +1,7 @@
 import User from '../models/User.js';
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
+import Setting from '../models/Setting.js';
 
 export async function overview(_req, res) {
   const [totalUsers, totalSellers, totalBuyers, totalOrders, totalProducts] = await Promise.all([
@@ -76,4 +77,20 @@ export async function deleteOrderAdmin(req, res) {
   const order = await Order.findByIdAndDelete(req.params.id);
   if (!order) return res.status(404).json({ message: 'Order not found' });
   res.json({ message: 'Order deleted' });
+}
+
+export async function getSettings(_req, res) {
+  const settings = await Setting.getSingleton();
+  res.json(settings);
+}
+
+export async function updateSettings(req, res) {
+  const { siteName, supportPhone, supportEmail, maintenanceMode } = req.body;
+  const settings = await Setting.getSingleton();
+  if (siteName !== undefined) settings.siteName = siteName;
+  if (supportPhone !== undefined) settings.supportPhone = supportPhone;
+  if (supportEmail !== undefined) settings.supportEmail = supportEmail;
+  if (maintenanceMode !== undefined) settings.maintenanceMode = maintenanceMode;
+  await settings.save();
+  res.json(settings);
 }

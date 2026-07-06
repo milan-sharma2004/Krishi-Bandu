@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Plus, X, Trash2 } from 'lucide-react';
 import api from '../../api/client.js';
+import { useToast } from '../../context/ToastContext.jsx';
 
 const EMPTY_FORM = { type: 'general', message: '', region: '', severity: 'low' };
 
 export default function Advisories() {
+  const { notify } = useToast();
   const [advisories, setAdvisories] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -21,6 +23,7 @@ export default function Advisories() {
   async function handleSubmit(e) {
     e.preventDefault();
     await api.post('/advisories', form);
+    notify('Advisory published.', 'success');
     setForm(EMPTY_FORM);
     setShowForm(false);
     load();
@@ -29,6 +32,7 @@ export default function Advisories() {
   async function handleDelete(id) {
     if (!confirm('Delete this advisory?')) return;
     await api.delete(`/advisories/${id}`);
+    notify('Advisory deleted.', 'success');
     load();
   }
 

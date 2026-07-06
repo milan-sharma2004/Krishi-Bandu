@@ -56,3 +56,28 @@ export async function login(req, res) {
 export async function me(req, res) {
   res.json({ user: req.user });
 }
+
+export async function updateMe(req, res) {
+  const { name, phone, location, avatarUrl } = req.body;
+  const user = await User.findById(req.user._id);
+  if (name !== undefined) user.name = name;
+  if (phone !== undefined) user.phone = phone;
+  if (location !== undefined) user.location = location;
+  if (avatarUrl !== undefined) user.avatarUrl = avatarUrl;
+  await user.save();
+  res.json({ user: sanitize(user) });
+}
+
+export async function changePassword(req, res) {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ message: 'Current and new password are required' });
+  }
+  const user = await User.findById(req.user._id);
+  const match = await bcrypt.compare(currentPassword, user.password);
+  if (!match) return res.status(401).json({ message: 'Current password is incorrect' });
+
+  user.password = await bcrypt.hash(newPassword, 10);
+  await user.save();
+  res.json({ message: 'Password updated' });
+}

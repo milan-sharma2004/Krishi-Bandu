@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import api from '../../api/client.js';
+import { useToast } from '../../context/ToastContext.jsx';
 
 export default function Products() {
+  const { notify } = useToast();
   const [products, setProducts] = useState([]);
 
   function load() {
@@ -14,12 +16,14 @@ export default function Products() {
   async function toggleStatus(product) {
     const status = product.status === 'active' ? 'inactive' : 'active';
     await api.patch(`/admin/products/${product._id}/status`, { status });
+    notify(`"${product.name}" ${status === 'active' ? 'activated' : 'deactivated'}.`, 'success');
     load();
   }
 
   async function handleDelete(product) {
     if (!confirm(`Delete listing "${product.name}"? This cannot be undone.`)) return;
     await api.delete(`/admin/products/${product._id}`);
+    notify(`"${product.name}" deleted.`, 'success');
     load();
   }
 

@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import path from 'path';
 import express from 'express';
 import cors from 'cors';
 import { connectDB } from './config/db.js';
@@ -11,11 +12,15 @@ import advisoryRoutes from './routes/advisory.routes.js';
 import serviceRoutes from './routes/service.routes.js';
 import shopRoutes from './routes/shop.routes.js';
 import adminRoutes from './routes/admin.routes.js';
+import weatherRoutes from './routes/weather.routes.js';
+import recommendationRoutes from './routes/recommendation.routes.js';
+import uploadRoutes from './routes/upload.routes.js';
 
 const app = express();
 
 app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173' }));
 app.use(express.json());
+app.use('/uploads', express.static(path.resolve('uploads')));
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 
@@ -27,6 +32,9 @@ app.use('/api/advisories', advisoryRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/shops', shopRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/weather', weatherRoutes);
+app.use('/api/recommendations', recommendationRoutes);
+app.use('/api/uploads', uploadRoutes);
 
 app.use((req, res) => res.status(404).json({ message: 'Not found' }));
 

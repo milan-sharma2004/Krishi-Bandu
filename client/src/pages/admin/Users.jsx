@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import api from '../../api/client.js';
+import { useToast } from '../../context/ToastContext.jsx';
 
 const ROLE_STYLE = {
   farmer: 'bg-primary-100 text-primary-700',
@@ -9,6 +10,7 @@ const ROLE_STYLE = {
 };
 
 export default function Users() {
+  const { notify } = useToast();
   const [users, setUsers] = useState([]);
   const [roleFilter, setRoleFilter] = useState('All');
 
@@ -21,12 +23,14 @@ export default function Users() {
   async function toggleStatus(user) {
     const status = user.status === 'active' ? 'suspended' : 'active';
     await api.patch(`/admin/users/${user._id}/status`, { status });
+    notify(`${user.name} ${status === 'active' ? 'activated' : 'suspended'}.`, 'success');
     load();
   }
 
   async function handleDelete(user) {
     if (!confirm(`Delete ${user.name}'s account? This cannot be undone.`)) return;
     await api.delete(`/admin/users/${user._id}`);
+    notify(`${user.name}'s account deleted.`, 'success');
     load();
   }
 

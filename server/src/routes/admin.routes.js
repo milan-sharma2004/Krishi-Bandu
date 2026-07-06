@@ -9,6 +9,8 @@ import {
   deleteProductAdmin,
   updateOrderStatusAdmin,
   deleteOrderAdmin,
+  getSettings,
+  updateSettings,
 } from '../controllers/admin.controller.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 
@@ -24,5 +26,7 @@ router.patch('/products/:id/status', updateProductStatus);
 router.delete('/products/:id', deleteProductAdmin);
 router.patch('/orders/:id/status', updateOrderStatusAdmin);
 router.delete('/orders/:id', deleteOrderAdmin);
+router.get('/settings', getSettings);
+router.put('/settings', updateSettings);
 
 export default router;

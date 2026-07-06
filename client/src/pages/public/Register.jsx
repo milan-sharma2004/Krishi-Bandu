@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Logo from '../../components/Logo.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { useToast } from '../../context/ToastContext.jsx';
 
 export default function Register() {
   const { register } = useAuth();
+  const { notify } = useToast();
   const navigate = useNavigate();
   const [form, setForm] = useState({
     name: '',
@@ -27,6 +29,7 @@ export default function Register() {
     setLoading(true);
     try {
       const user = await register(form);
+      notify(`Account created — welcome, ${user.name.split(' ')[0]}!`, 'success');
       if (user.role === 'farmer') navigate('/farmer');
       else if (user.role === 'buyer') navigate('/buyer');
       else navigate('/admin');
