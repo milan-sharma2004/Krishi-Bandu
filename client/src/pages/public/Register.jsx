@@ -29,10 +29,14 @@ export default function Register() {
     setLoading(true);
     try {
       const user = await register(form);
-      notify(`Account created — welcome, ${user.name.split(' ')[0]}!`, 'success');
       if (user.role === 'farmer') navigate('/farmer');
       else if (user.role === 'buyer') navigate('/buyer');
       else navigate('/admin');
+      try {
+        notify(`Account created — welcome, ${user.name.split(' ')[0]}!`, 'success');
+      } catch {
+        // toast is a non-critical nicety; never let it affect the registration outcome
+      }
     } catch (err) {
       setError(err?.response?.data?.message || 'Registration failed');
     } finally {

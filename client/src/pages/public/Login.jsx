@@ -19,10 +19,14 @@ export default function Login() {
     setLoading(true);
     try {
       const user = await login(email, password);
-      notify(`Welcome back, ${user.name.split(' ')[0]}!`, 'success');
       if (user.role === 'farmer') navigate('/farmer');
       else if (user.role === 'buyer') navigate('/buyer');
       else navigate('/admin');
+      try {
+        notify(`Welcome back, ${user.name.split(' ')[0]}!`, 'success');
+      } catch {
+        // toast is a non-critical nicety; never let it affect the login outcome
+      }
     } catch (err) {
       setError(err?.response?.data?.message || 'Login failed');
     } finally {
