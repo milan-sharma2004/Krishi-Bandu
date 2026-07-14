@@ -23,39 +23,66 @@ export default function Register() {
     }
   }, [isAuthenticated, loading, navigate, user?.role]);
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (submitting) return;
-    setError('');
+ async function handleSubmit(e) {
+  e.preventDefault();
 
-    if (!name.trim() || !email.trim() || !password) {
-      setError('Please fill in all required fields.');
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setError('Please enter a valid email address.');
-      return;
-    }
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters.');
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.');
-      return;
-    }
+  if (submitting) return;
 
-    setSubmitting(true);
-    try {
-      await register({ name: name.trim(), email: email.trim(), password, role });
-      notify('Account created successfully', 'success');
-    } catch (err) {
-      setError(err.message || 'Unable to create your account. Please try again.');
-      notify(err.message || 'Registration failed', 'error');
-    } finally {
-      setSubmitting(false);
-    }
+  setError('');
+
+  if (!name.trim() || !email.trim() || !password) {
+    setError('Please fill in all required fields.');
+    return;
   }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    setError('Please enter a valid email address.');
+    return;
+  }
+
+  if (password.length < 8) {
+    setError('Password must be at least 8 characters.');
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    setError('Passwords do not match.');
+    return;
+  }
+
+  setSubmitting(true);
+
+  try {
+    const result = await register({
+      name: name.trim(),
+      email: email.trim(),
+      password,
+      role,
+    });
+
+    notify(
+      result.message ||
+        'Registration submitted. Your account is awaiting administrator approval.',
+      'success'
+    );
+
+    navigate('/login', {
+      replace: true,
+      state: {
+        registrationPending: true,
+      },
+    });
+  } catch (err) {
+    const message =
+      err.message ||
+      'Unable to create your account. Please try again.';
+
+    setError(message);
+    notify(message, 'error');
+  } finally {
+    setSubmitting(false);
+  }
+}
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-10">
