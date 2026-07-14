@@ -25,20 +25,35 @@ export function createApp() {
     app.set('trust proxy', 1);
   }
 
-  const allowedOrigins = (process.env.CLIENT_ORIGIN || 'http://localhost:5173')
+  const allowedOrigins = [
+  'http://localhost:5173',
+  'https://krishibandu.com',
+  'https://www.krishibandu.com',
+  'https://krishi-bandu.pages.dev',
+  'https://55fac563.krishi-bandu.pages.dev',
+  ...(process.env.CLIENT_ORIGIN || '')
     .split(',')
     .map((origin) => origin.trim())
-    .filter(Boolean);
+    .filter(Boolean),
+];
 
-  app.use(helmet());
-  app.use(
-    cors({
-      origin: allowedOrigins,
-      credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization'],
-    })
-  );
+app.use(helmet());
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      console.error('Blocked by CORS:', origin);
+      return callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: true, limit: '1mb' }));
   app.use(sanitizeBody);
