@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Plus,
+  Package,
   Receipt,
   TrendingUp,
   AlertTriangle,
@@ -28,7 +29,8 @@ const ADVISORY_ICON = {
 };
 
 const QUICK_ACTIONS = [
-  { label: 'Add New Crop', icon: Plus, to: '/farmer/crops' },
+  { label: 'List a Product for Sale', icon: Package, to: '/farmer/products' },
+  { label: 'Log Crop Record', icon: Plus, to: '/farmer/crops' },
   { label: 'Add Expense', icon: Receipt, to: '/farmer/crops' },
   { label: 'View Market Prices', icon: TrendingUp, to: '/farmer/market-prices' },
   { label: 'Pest Alert', icon: AlertTriangle, to: '/farmer/advisories' },
