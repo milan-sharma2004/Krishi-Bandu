@@ -39,7 +39,61 @@ export async function updateUserStatus(req, res) {
   if (!user) return res.status(404).json({ message: 'User not found' });
   res.json(user);
 }
+export async function updateUserApproval(req, res) {
+  const { approvalStatus, rejectionReason } = req.body;
 
+  const validStatuses = ['pending', 'approved', 'rejected'];
+
+  if (!validStatuses.includes(approvalStatus)) {
+    return res.status(400).json({
+      message: 'Invalid approval status',
+    });
+  }
+
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    return res.status(404).json({
+      message: 'User not found',
+    });
+  }
+
+  if (user.role === 'admin') {
+    return res.status(403).json({
+      message: 'Administrator approval cannot be changed',
+    });
+  }
+
+  user.approvalStatus = approvalStatus;
+
+  if (approvalStatus === 'approved') {
+    user.approvedAt = new Date();
+    user.approvedBy = req.user._id;
+    user.rejectionReason = null;
+  } else if (approvalStatus === 'rejected') {
+    user.approvedAt = null;
+    user.approvedBy = null;
+    user.rejectionReason =
+      String(rejectionReason || '').trim() ||
+      'Registration was rejected by the administrator.';
+  } else {
+    user.approvedAt = null;
+    user.approvedBy = null;
+    user.rejectionReason = null;
+  }
+
+  await user.save();
+
+  return res.json({
+    message:
+      approvalStatus === 'approved'
+        ? 'User account approved'
+        : approvalStatus === 'rejected'
+          ? 'User registration rejected'
+          : 'User returned to pending review',
+    user: user.toJSON(),
+  });
+}
 export async function deleteUser(req, res) {
   const target = await User.findById(req.params.id);
   if (!target) return res.status(404).json({ message: 'User not found' });
