@@ -75,11 +75,9 @@ export default function AdminLayout() {
         </nav>
         <div className="border-t border-gray-800 p-4">
           <div className="mb-3 flex items-center gap-2">
-            <img
-              src={user?.avatarUrl || `https://ui-avatars.com/api/?name=${user?.name}`}
-              alt={user?.name}
-              className="h-8 w-8 rounded-full object-cover"
-            />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-600 text-sm font-semibold text-white">
+              {user?.name?.charAt(0)?.toUpperCase() || 'A'}
+            </div>
             <div className="min-w-0">
               <p className="truncate text-sm font-medium text-white">{user?.name}</p>
               <p className="text-xs text-gray-500">Administrator</p>

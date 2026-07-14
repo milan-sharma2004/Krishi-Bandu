@@ -1,5 +1,5 @@
-import { createContext, useContext, useEffect, useState } from 'react';
-import api from '../api/client.js';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import api, { getErrorMessage, getToken, setToken } from '../api/client.js';
 
 const AuthContext = createContext(undefined);
 
@@ -7,37 +7,66 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const token = localStorage.getItem('kb_token');
-    if (!token) {
-      setLoading(false);
-      return;
+  const refreshUser = useCallback(async () => {
+    if (!getToken()) {
+      setUser(null);
+      return null;
     }
-    api
-      .get('/auth/me')
-      .then((res) => setUser(res.data.user))
-      .catch(() => {
-        localStorage.removeItem('kb_token');
-      })
-      .finally(() => setLoading(false));
+    try {
+      const res = await api.get('/auth/me');
+      setUser(res.data.user);
+      return res.data.user;
+    } catch {
+      setToken(null);
+      setUser(null);
+      return null;
+    }
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      setLoading(true);
+      await refreshUser();
+      if (active) setLoading(false);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [refreshUser]);
+
+  useEffect(() => {
+    function handleUnauthorized() {
+      setUser(null);
+    }
+    window.addEventListener('kb:unauthorized', handleUnauthorized);
+    return () => window.removeEventListener('kb:unauthorized', handleUnauthorized);
   }, []);
 
   async function login(email, password) {
-    const res = await api.post('/auth/login', { email, password });
-    localStorage.setItem('kb_token', res.data.token);
-    setUser(res.data.user);
-    return res.data.user;
+    try {
+      const res = await api.post('/auth/login', { email, password });
+      setToken(res.data.token);
+      setUser(res.data.user);
+      return res.data.user;
+    } catch (error) {
+      throw new Error(getErrorMessage(error));
+    }
   }
 
   async function register(data) {
-    const res = await api.post('/auth/register', data);
-    localStorage.setItem('kb_token', res.data.token);
-    setUser(res.data.user);
-    return res.data.user;
+    try {
+      const res = await api.post('/auth/register', data);
+      setToken(res.data.token);
+      setUser(res.data.user);
+      return res.data.user;
+    } catch (error) {
+      throw new Error(getErrorMessage(error));
+    }
   }
 
   function logout() {
-    localStorage.removeItem('kb_token');
+    setToken(null);
     setUser(null);
   }
 
@@ -47,11 +76,18 @@ export function AuthProvider({ children }) {
     return res.data.user;
   }
 
-  return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updateProfile }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const value = {
+    user,
+    isAuthenticated: !!user,
+    loading,
+    login,
+    register,
+    logout,
+    refreshUser,
+    updateProfile,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
