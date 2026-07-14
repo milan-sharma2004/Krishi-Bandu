@@ -1,5 +1,16 @@
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import api, { getErrorMessage, getToken, setToken } from '../api/client.js';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
+
+import api, {
+  getErrorMessage,
+  getToken,
+  setToken,
+} from '../api/client.js';
 
 const AuthContext = createContext(undefined);
 
@@ -8,28 +19,42 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   const refreshUser = useCallback(async () => {
-    if (!getToken()) {
+    const token = getToken();
+
+    if (!token) {
       setUser(null);
       return null;
     }
+
     try {
       const res = await api.get('/auth/me');
+
       setUser(res.data.user);
+
       return res.data.user;
     } catch {
       setToken(null);
       setUser(null);
+
       return null;
     }
   }, []);
 
   useEffect(() => {
     let active = true;
-    (async () => {
+
+    async function restoreSession() {
       setLoading(true);
+
       await refreshUser();
-      if (active) setLoading(false);
-    })();
+
+      if (active) {
+        setLoading(false);
+      }
+    }
+
+    restoreSession();
+
     return () => {
       active = false;
     };
@@ -37,48 +62,76 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     function handleUnauthorized() {
+      setToken(null);
       setUser(null);
     }
-    window.addEventListener('kb:unauthorized', handleUnauthorized);
-    return () => window.removeEventListener('kb:unauthorized', handleUnauthorized);
+
+    window.addEventListener(
+      'kb:unauthorized',
+      handleUnauthorized
+    );
+
+    return () => {
+      window.removeEventListener(
+        'kb:unauthorized',
+        handleUnauthorized
+      );
+    };
   }, []);
 
-  async function login(email, password) {
-    try {
-      const res = await api.post('/auth/login', { email, password });
-      setToken(res.data.token);
-      setUser(res.data.user);
-      return res.data.user;
-    } catch (error) {
-      throw new Error(getErrorMessage(error));
-    }
+  async function login(
+  email,
+  password,
+  rememberMe = false
+) {
+  try {
+    const res = await api.post('/auth/login', {
+      email,
+      password,
+    });
+
+    setToken(res.data.token, rememberMe);
+    setUser(res.data.user);
+
+    return res.data.user;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
   }
+}
 
   async function register(data) {
     try {
       const res = await api.post('/auth/register', data);
-      setToken(res.data.token);
-      setUser(res.data.user);
-      return res.data.user;
+
+      // Do not save a token or log in automatically.
+      // The new account is pending admin approval.
+      return res.data;
     } catch (error) {
       throw new Error(getErrorMessage(error));
     }
   }
 
   function logout() {
+    // setToken(null) should clear stored JWT and Axios header.
     setToken(null);
     setUser(null);
   }
 
   async function updateProfile(data) {
-    const res = await api.put('/auth/me', data);
-    setUser(res.data.user);
-    return res.data.user;
+    try {
+      const res = await api.put('/auth/me', data);
+
+      setUser(res.data.user);
+
+      return res.data.user;
+    } catch (error) {
+      throw new Error(getErrorMessage(error));
+    }
   }
 
   const value = {
     user,
-    isAuthenticated: !!user,
+    isAuthenticated: Boolean(user),
     loading,
     login,
     register,
@@ -87,11 +140,21 @@ export function AuthProvider({ children }) {
     updateProfile,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
-  return ctx;
+  const context = useContext(AuthContext);
+
+  if (!context) {
+    throw new Error(
+      'useAuth must be used within AuthProvider'
+    );
+  }
+
+  return context;
 }
