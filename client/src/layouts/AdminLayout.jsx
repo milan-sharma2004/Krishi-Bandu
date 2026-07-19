@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, Link } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
@@ -186,17 +186,14 @@ export default function AdminLayout() {
             </span>
           </div>
 
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="text-gray-500"
-            aria-label="Log out"
-          >
-            <LogOut size={18} />
-          </button>
+          <Link to="/admin/settings" aria-label="Profile & settings">
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-600 text-xs font-semibold text-white">
+              {user?.name?.charAt(0)?.toUpperCase() || 'A'}
+            </span>
+          </Link>
         </header>
 
-        <main className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6">
+        <main className="mx-auto max-w-[1680px] px-4 py-6 sm:px-6">
           <Outlet />
         </main>
       </div>

@@ -27,16 +27,15 @@ export function createApp() {
   }
 
   const allowedOrigins = [
-  'http://localhost:5173',
-  'https://krishibandu.com',
-  'https://www.krishibandu.com',
-  'https://krishi-bandu.pages.dev',
-  'https://55fac563.krishi-bandu.pages.dev',
-  ...(process.env.CLIENT_ORIGIN || '')
-    .split(',')
-    .map((origin) => origin.trim())
-    .filter(Boolean),
-];
+    'http://localhost:5173',
+    'https://krishibandu.com',
+    'https://www.krishibandu.com',
+    'https://krishi-bandu.pages.dev',
+    ...(process.env.CLIENT_ORIGIN || '')
+      .split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean),
+  ];
 
 app.use(helmet());
 

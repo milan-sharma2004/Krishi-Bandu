@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
 import api from '../../api/client.js';
 
 export default function Settings() {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, logout } = useAuth();
+  const navigate = useNavigate();
   const { notify } = useToast();
   const [profile, setProfile] = useState({ name: '', phone: '', location: '' });
   const [savingProfile, setSavingProfile] = useState(false);
@@ -52,6 +55,11 @@ export default function Settings() {
     } finally {
       setSavingPassword(false);
     }
+  }
+
+  function handleLogout() {
+    logout();
+    navigate('/login', { replace: true });
   }
 
   async function handleSiteSubmit(e) {
@@ -179,6 +187,13 @@ export default function Settings() {
           </button>
         </form>
       )}
+
+      <button
+        onClick={handleLogout}
+        className="flex w-full items-center justify-center gap-2 rounded-full border border-red-200 py-3 text-sm font-semibold text-red-600 hover:bg-red-50"
+      >
+        <LogOut size={16} /> Log out
+      </button>
     </div>
   );
 }

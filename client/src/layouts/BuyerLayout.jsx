@@ -1,9 +1,11 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Home, Search, ClipboardList, User, ShoppingCart, LogOut } from 'lucide-react';
+import { NavLink, Outlet, Link } from 'react-router-dom';
+import { Home, Search, ClipboardList, User, ShoppingCart } from 'lucide-react';
 import Logo from '../components/Logo.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useCart } from '../context/CartContext.jsx';
 
+// Used for the mobile bottom tab bar. The desktop header nav drops "Profile"
+// since the avatar in the header already links there.
 const NAV_ITEMS = [
   { to: '/buyer', label: 'Home', icon: Home, end: true },
   { to: '/buyer/browse', label: 'Browse', icon: Search },
@@ -11,24 +13,20 @@ const NAV_ITEMS = [
   { to: '/buyer/profile', label: 'Profile', icon: User },
 ];
 
+const DESKTOP_NAV_ITEMS = NAV_ITEMS.filter((item) => item.to !== '/buyer/profile');
+
 export default function BuyerLayout() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { items } = useCart();
   const cartCount = items.reduce((sum, i) => sum + i.quantity, 0);
-  const navigate = useNavigate();
-
-  function handleLogout() {
-    logout();
-    navigate('/login', { replace: true });
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-16 md:pb-0">
       <header className="sticky top-0 z-30 border-b border-gray-200 bg-white">
-        <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-4 px-4 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-[1680px] items-center gap-6 px-4 py-3 sm:px-6">
           <Logo />
-          <nav className="hidden items-center gap-1 md:flex">
-            {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
+          <nav className="hidden flex-1 items-center gap-1.5 md:flex">
+            {DESKTOP_NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
               <NavLink
                 key={to}
                 to={to}
@@ -44,7 +42,7 @@ export default function BuyerLayout() {
               </NavLink>
             ))}
           </nav>
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-3 md:ml-auto">
             <NavLink to="/buyer/cart" className="relative rounded-full p-2 text-gray-500 hover:bg-gray-100">
               <ShoppingCart size={20} />
               {cartCount > 0 && (
@@ -53,21 +51,16 @@ export default function BuyerLayout() {
                 </span>
               )}
             </NavLink>
-            <div className="hidden text-right sm:block">
-              <p className="text-sm font-semibold text-gray-900">{user?.name}</p>
-              <p className="text-xs text-gray-500">{user?.location}</p>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="hidden items-center gap-1.5 rounded-full border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 sm:flex"
-            >
-              <LogOut size={15} /> Log out
-            </button>
+            <Link to="/buyer/profile" title={user?.name} className="hidden items-center rounded-full hover:opacity-80 sm:flex">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-600 text-sm font-semibold text-white">
+                {user?.name?.charAt(0)?.toUpperCase() || 'B'}
+              </span>
+            </Link>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1200px] px-4 py-6 sm:px-6">
+      <main className="mx-auto max-w-[1680px] px-4 py-6 sm:px-6">
         <Outlet />
       </main>
 

@@ -29,7 +29,7 @@ export async function overview(_req, res) {
 }
 
 export async function listUsers(_req, res) {
-  const users = await User.find().select('-password').sort({ createdAt: -1 });
+  const users = await User.find().sort({ createdAt: -1 });
   res.json(users);
 }
 

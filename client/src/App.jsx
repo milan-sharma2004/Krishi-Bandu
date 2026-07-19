@@ -16,6 +16,7 @@ import FarmerShops from './pages/farmer/Shops.jsx';
 import FarmerProducts from './pages/farmer/MyProducts.jsx';
 import FarmerOrders from './pages/farmer/Orders.jsx';
 import FarmerSupport from './pages/farmer/Support.jsx';
+import FarmerProfile from './pages/farmer/Profile.jsx';
 
 import BuyerLayout from './layouts/BuyerLayout.jsx';
 import BuyerHome from './pages/buyer/Home.jsx';
@@ -63,6 +64,7 @@ function App() {
         <Route path="products" element={<FarmerProducts />} />
         <Route path="orders" element={<FarmerOrders />} />
         <Route path="support" element={<FarmerSupport />} />
+        <Route path="profile" element={<FarmerProfile />} />
       </Route>
 
       <Route
