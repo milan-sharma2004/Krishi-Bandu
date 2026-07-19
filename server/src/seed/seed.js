@@ -36,6 +36,8 @@ async function run() {
       phone: '9851234567',
       location: 'Sindhupalchok',
       avatarUrl: 'https://i.pravatar.cc/150?img=12',
+      shopName: "Ravi's Organic Farm",
+      shopDescription: 'Fresh vegetables and grains grown in the hills of Sindhupalchok. Family-run since 2015.',
     },
     {
       name: 'Sita Sharma',
@@ -164,6 +166,8 @@ async function run() {
   console.log('Creating a sample order...');
   const tomato = products.find((p) => p.name === 'Tomato');
   const potato = products.find((p) => p.name === 'Potato');
+  const orderPlacedAt = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+  const orderConfirmedAt = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000);
   await Order.create({
     orderCode: 'KBORD12563',
     buyer: sita._id,
@@ -176,6 +180,14 @@ async function run() {
     paymentMethod: 'eSewa',
     deliveryAddress: 'Bhaktapur, Bhaktapur',
     status: 'Confirmed',
+    statusHistory: [
+      { status: 'Pending', changedAt: orderPlacedAt },
+      { status: 'Confirmed', changedAt: orderConfirmedAt, note: 'Order confirmed by seller' },
+    ],
+    estimatedDelivery: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+    courierName: 'Kathmandu Valley Courier',
+    courierContact: '9801234567',
+    createdAt: orderPlacedAt,
   });
 
   // Extra random orders across the last 30 days for the admin chart

@@ -33,6 +33,7 @@ export async function createOrder(req, res) {
         totalAmount,
         deliveryAddress,
         paymentMethod: paymentMethod || 'Cash on Delivery',
+        statusHistory: [{ status: 'Pending', changedAt: new Date() }],
       });
     })
   );
@@ -63,14 +64,29 @@ export async function getOrder(req, res) {
   res.json(order);
 }
 
+const VALID_STATUSES = ['Pending', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'];
+
 export async function updateOrderStatus(req, res) {
-  const { status } = req.body;
-  const order = await Order.findOneAndUpdate(
-    { _id: req.params.id, seller: req.user._id },
-    { status },
-    { new: true }
-  );
+  const { status, note, estimatedDelivery, courierName, courierContact } = req.body;
+  const order = await Order.findOne({ _id: req.params.id, seller: req.user._id });
   if (!order) return res.status(404).json({ message: 'Order not found' });
+
+  if (status !== undefined) {
+    if (!VALID_STATUSES.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status' });
+    }
+    if (status !== order.status) {
+      order.status = status;
+      order.statusHistory.push({ status, changedAt: new Date(), note });
+    }
+  }
+  if (estimatedDelivery !== undefined) {
+    order.estimatedDelivery = estimatedDelivery ? new Date(estimatedDelivery) : null;
+  }
+  if (courierName !== undefined) order.courierName = courierName || null;
+  if (courierContact !== undefined) order.courierContact = courierContact || null;
+
+  await order.save();
   res.json(order);
 }
 

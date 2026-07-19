@@ -8,6 +8,7 @@ import {
   Wrench,
   Store,
   Package,
+  ClipboardList,
   LifeBuoy,
   LogOut,
 } from 'lucide-react';
@@ -23,6 +24,7 @@ const NAV_ITEMS = [
   { to: '/farmer/services', label: 'Services', icon: Wrench },
   { to: '/farmer/shops', label: 'Shops', icon: Store },
   { to: '/farmer/products', label: 'My Products', icon: Package },
+  { to: '/farmer/orders', label: 'Orders', icon: ClipboardList },
   { to: '/farmer/support', label: 'Support', icon: LifeBuoy },
 ];
 

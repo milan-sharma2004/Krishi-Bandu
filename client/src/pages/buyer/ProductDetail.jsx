@@ -48,9 +48,11 @@ export default function ProductDetail() {
           <span className="flex items-center gap-1">
             <MapPin size={14} /> {product.location}
           </span>
-          <span className="flex items-center gap-1">
-            <User size={14} /> {product.seller?.name}
-          </span>
+          {product.seller && (
+            <Link to={`/buyer/sellers/${product.seller._id}`} className="flex items-center gap-1 text-primary-600 hover:underline">
+              <User size={14} /> {product.seller.name}'s Shop
+            </Link>
+          )}
         </div>
 
         <p className="mt-2 text-sm text-gray-500">Available: {product.availableQty} kg · {product.listingType}</p>

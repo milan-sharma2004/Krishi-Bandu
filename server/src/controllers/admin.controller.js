@@ -108,8 +108,14 @@ export async function deleteProductAdmin(req, res) {
 
 export async function updateOrderStatusAdmin(req, res) {
   const { status } = req.body;
-  const order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true });
+  const order = await Order.findById(req.params.id);
   if (!order) return res.status(404).json({ message: 'Order not found' });
+
+  if (status && status !== order.status) {
+    order.status = status;
+    order.statusHistory.push({ status, changedAt: new Date(), note: 'Updated by admin' });
+    await order.save();
+  }
   res.json(order);
 }
 

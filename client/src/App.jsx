@@ -14,12 +14,14 @@ import FarmerAdvisories from './pages/farmer/Advisories.jsx';
 import FarmerServices from './pages/farmer/Services.jsx';
 import FarmerShops from './pages/farmer/Shops.jsx';
 import FarmerProducts from './pages/farmer/MyProducts.jsx';
+import FarmerOrders from './pages/farmer/Orders.jsx';
 import FarmerSupport from './pages/farmer/Support.jsx';
 
 import BuyerLayout from './layouts/BuyerLayout.jsx';
 import BuyerHome from './pages/buyer/Home.jsx';
 import BuyerBrowse from './pages/buyer/Browse.jsx';
 import BuyerProductDetail from './pages/buyer/ProductDetail.jsx';
+import BuyerSellerShop from './pages/buyer/SellerShop.jsx';
 import BuyerCart from './pages/buyer/Cart.jsx';
 import BuyerOrders from './pages/buyer/Orders.jsx';
 import BuyerOrderDetail from './pages/buyer/OrderDetail.jsx';
@@ -59,6 +61,7 @@ function App() {
         <Route path="services" element={<FarmerServices />} />
         <Route path="shops" element={<FarmerShops />} />
         <Route path="products" element={<FarmerProducts />} />
+        <Route path="orders" element={<FarmerOrders />} />
         <Route path="support" element={<FarmerSupport />} />
       </Route>
 
@@ -73,6 +76,7 @@ function App() {
         <Route index element={<BuyerHome />} />
         <Route path="browse" element={<BuyerBrowse />} />
         <Route path="products/:id" element={<BuyerProductDetail />} />
+        <Route path="sellers/:id" element={<BuyerSellerShop />} />
         <Route path="cart" element={<BuyerCart />} />
         <Route path="orders" element={<BuyerOrders />} />
         <Route path="orders/:id" element={<BuyerOrderDetail />} />

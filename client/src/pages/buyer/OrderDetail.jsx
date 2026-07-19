@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Truck } from 'lucide-react';
+import { Truck, CheckCircle2, Circle, User, Phone, CalendarClock } from 'lucide-react';
 import api from '../../api/client.js';
 
 const STATUS_STYLE = {
@@ -57,6 +57,52 @@ export default function OrderDetail() {
               {i < STEPS.length - 1 && <div className={`h-0.5 flex-1 ${i < stepIndex ? 'bg-primary-600' : 'bg-gray-200'}`} />}
             </div>
           ))}
+        </div>
+      )}
+
+      {(order.estimatedDelivery || order.courierName || order.courierContact) && (
+        <div className="space-y-2 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+          <p className="text-sm font-semibold text-gray-500">Delivery Details</p>
+          {order.estimatedDelivery && (
+            <div className="flex items-center gap-2 text-sm text-gray-700">
+              <CalendarClock size={15} className="text-gray-400" />
+              Estimated delivery: {new Date(order.estimatedDelivery).toLocaleDateString()}
+            </div>
+          )}
+          {order.courierName && (
+            <div className="flex items-center gap-2 text-sm text-gray-700">
+              <User size={15} className="text-gray-400" />
+              Courier: {order.courierName}
+            </div>
+          )}
+          {order.courierContact && (
+            <div className="flex items-center gap-2 text-sm text-gray-700">
+              <Phone size={15} className="text-gray-400" />
+              {order.courierContact}
+            </div>
+          )}
+        </div>
+      )}
+
+      {order.statusHistory?.length > 0 && (
+        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+          <p className="mb-3 text-sm font-semibold text-gray-500">Tracking History</p>
+          <ul className="space-y-3">
+            {[...order.statusHistory].reverse().map((h, i) => (
+              <li key={i} className="flex items-start gap-2 text-sm">
+                {i === 0 ? (
+                  <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-primary-600" />
+                ) : (
+                  <Circle size={16} className="mt-0.5 shrink-0 text-gray-300" />
+                )}
+                <div>
+                  <p className={i === 0 ? 'font-semibold text-gray-900' : 'text-gray-600'}>{h.status}</p>
+                  <p className="text-xs text-gray-400">{new Date(h.changedAt).toLocaleString()}</p>
+                  {h.note && <p className="text-xs text-gray-500">{h.note}</p>}
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 

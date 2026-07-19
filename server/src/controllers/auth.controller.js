@@ -7,7 +7,7 @@ import { isValidEmail, isValidPassword, normalizeRole } from '../utils/validator
 
 const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS) || 12;
 
-const EDITABLE_PROFILE_FIELDS = ['name', 'phone', 'location', 'avatarUrl'];
+const EDITABLE_PROFILE_FIELDS = ['name', 'phone', 'location', 'avatarUrl', 'shopName', 'shopDescription'];
 
 export const register = asyncHandler(async (req, res) => {
   const { name, email, password, role, phone, location } = req.body;

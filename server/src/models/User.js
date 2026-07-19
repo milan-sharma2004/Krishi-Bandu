@@ -9,6 +9,8 @@ const userSchema = new mongoose.Schema(
     phone: { type: String, trim: true },
     location: { type: String, trim: true },
     avatarUrl: { type: String },
+    shopName: { type: String, trim: true, default: null },
+    shopDescription: { type: String, trim: true, default: null },
     status: { type: String, enum: ['active', 'suspended'], default: 'active' },
     approvalStatus: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'approved' },
     rejectionReason: { type: String, default: null },

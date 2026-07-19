@@ -10,6 +10,19 @@ const orderItemSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const statusHistoryEntrySchema = new mongoose.Schema(
+  {
+    status: {
+      type: String,
+      enum: ['Pending', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'],
+      required: true,
+    },
+    changedAt: { type: Date, default: Date.now },
+    note: { type: String, trim: true },
+  },
+  { _id: false }
+);
+
 const orderSchema = new mongoose.Schema(
   {
     orderCode: { type: String, required: true, unique: true },
@@ -24,6 +37,10 @@ const orderSchema = new mongoose.Schema(
       enum: ['Pending', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'],
       default: 'Pending',
     },
+    statusHistory: [statusHistoryEntrySchema],
+    estimatedDelivery: { type: Date, default: null },
+    courierName: { type: String, trim: true, default: null },
+    courierContact: { type: String, trim: true, default: null },
   },
   { timestamps: true }
 );

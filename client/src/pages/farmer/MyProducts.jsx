@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Plus, X, Pencil, Trash2, ImagePlus } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Plus, X, Pencil, Trash2, ImagePlus, Store, ChevronDown, ExternalLink } from 'lucide-react';
 import api from '../../api/client.js';
+import { useAuth } from '../../context/AuthContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
 import { mediaUrl } from '../../utils/mediaUrl.js';
 
@@ -16,6 +18,7 @@ const EMPTY_FORM = {
 };
 
 export default function MyProducts() {
+  const { user, updateProfile } = useAuth();
   const { notify } = useToast();
   const [products, setProducts] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -24,6 +27,34 @@ export default function MyProducts() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
+
+  const [showShopForm, setShowShopForm] = useState(false);
+  const [shopForm, setShopForm] = useState({ shopName: '', shopDescription: '', location: '' });
+  const [savingShop, setSavingShop] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setShopForm({
+        shopName: user.shopName || '',
+        shopDescription: user.shopDescription || '',
+        location: user.location || '',
+      });
+    }
+  }, [user]);
+
+  async function handleShopSubmit(e) {
+    e.preventDefault();
+    setSavingShop(true);
+    try {
+      await updateProfile(shopForm);
+      notify('Shop info updated.', 'success');
+      setShowShopForm(false);
+    } catch (err) {
+      notify(err?.response?.data?.message || 'Could not update shop info.', 'error');
+    } finally {
+      setSavingShop(false);
+    }
+  }
 
   function load() {
     api.get('/products/mine').then((res) => setProducts(res.data));
@@ -123,6 +154,59 @@ export default function MyProducts() {
           {showForm ? <X size={16} /> : <Plus size={16} />}
           {showForm ? 'Cancel' : 'Add New Product'}
         </button>
+      </div>
+
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+        <button
+          onClick={() => setShowShopForm((s) => !s)}
+          className="flex w-full items-center justify-between p-4 text-left"
+        >
+          <span className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+            <Store size={16} className="text-primary-600" />
+            {user?.shopName || 'Set up your shop'}
+          </span>
+          <ChevronDown size={16} className={`text-gray-400 transition-transform ${showShopForm ? 'rotate-180' : ''}`} />
+        </button>
+
+        {showShopForm && (
+          <form onSubmit={handleShopSubmit} className="grid gap-3 border-t border-gray-100 p-4 sm:grid-cols-2">
+            <input
+              placeholder="Shop name (e.g. Ravi's Organic Farm)"
+              value={shopForm.shopName}
+              onChange={(e) => setShopForm((f) => ({ ...f, shopName: e.target.value }))}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm sm:col-span-2"
+            />
+            <textarea
+              placeholder="Short description buyers will see on your shop page"
+              value={shopForm.shopDescription}
+              onChange={(e) => setShopForm((f) => ({ ...f, shopDescription: e.target.value }))}
+              rows={2}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm sm:col-span-2"
+            />
+            <input
+              placeholder="Shop location"
+              value={shopForm.location}
+              onChange={(e) => setShopForm((f) => ({ ...f, location: e.target.value }))}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            />
+            <button
+              disabled={savingShop}
+              type="submit"
+              className="rounded-lg bg-primary-600 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
+            >
+              {savingShop ? 'Saving...' : 'Save Shop Info'}
+            </button>
+            {user?._id && (
+              <Link
+                to={`/buyer/sellers/${user._id}`}
+                target="_blank"
+                className="flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 sm:col-span-2"
+              >
+                <ExternalLink size={14} /> Preview My Shop
+              </Link>
+            )}
+          </form>
+        )}
       </div>
 
       {showForm && (
