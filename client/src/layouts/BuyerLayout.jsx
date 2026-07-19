@@ -1,5 +1,5 @@
-import { NavLink, Outlet } from 'react-router-dom';
-import { Home, Search, ClipboardList, User, LogOut, ShoppingCart } from 'lucide-react';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Home, Search, ClipboardList, User, ShoppingCart, LogOut } from 'lucide-react';
 import Logo from '../components/Logo.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useCart } from '../context/CartContext.jsx';
@@ -15,6 +15,12 @@ export default function BuyerLayout() {
   const { user, logout } = useAuth();
   const { items } = useCart();
   const cartCount = items.reduce((sum, i) => sum + i.quantity, 0);
+  const navigate = useNavigate();
+
+  function handleLogout() {
+    logout();
+    navigate('/login', { replace: true });
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-16 md:pb-0">
@@ -51,13 +57,11 @@ export default function BuyerLayout() {
               <p className="text-sm font-semibold text-gray-900">{user?.name}</p>
               <p className="text-xs text-gray-500">{user?.location}</p>
             </div>
-            <img
-              src={user?.avatarUrl || `https://ui-avatars.com/api/?name=${user?.name}`}
-              alt={user?.name}
-              className="h-9 w-9 rounded-full object-cover"
-            />
-            <button onClick={logout} className="hidden rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700 sm:block" title="Log out">
-              <LogOut size={18} />
+            <button
+              onClick={handleLogout}
+              className="hidden items-center gap-1.5 rounded-full border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 sm:flex"
+            >
+              <LogOut size={15} /> Log out
             </button>
           </div>
         </div>

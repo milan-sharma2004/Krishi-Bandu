@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Plus, X, Pencil, Trash2 } from 'lucide-react';
 import api from '../../api/client.js';
 import { useToast } from '../../context/ToastContext.jsx';
@@ -83,7 +84,14 @@ export default function Crops() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Crop Records</h1>
-          <p className="text-sm text-gray-500">Track your seasonal crop performance and pricing.</p>
+          <p className="text-sm text-gray-500">
+            Track your seasonal crop performance and pricing for your own records. To sell a crop on the
+            marketplace, use{' '}
+            <Link to="/farmer/products" className="font-medium text-primary-600 hover:underline">
+              My Products
+            </Link>{' '}
+            instead.
+          </p>
         </div>
         <button
           onClick={() => (showForm ? setShowForm(false) : startNew())}

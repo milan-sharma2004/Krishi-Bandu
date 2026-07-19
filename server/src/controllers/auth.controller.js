@@ -1,83 +1,118 @@
-import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
+import { signToken } from '../utils/jwt.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { AppError } from '../utils/AppError.js';
+import { isValidEmail, isValidPassword, normalizeRole } from '../utils/validators.js';
 
-function signToken(user) {
-  return jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
-    expiresIn: '7d',
-  });
-}
+const SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS) || 12;
 
-function sanitize(user) {
-  const obj = user.toObject();
-  delete obj.password;
-  return obj;
-}
+const EDITABLE_PROFILE_FIELDS = ['name', 'phone', 'location', 'avatarUrl'];
 
-export async function register(req, res) {
+export const register = asyncHandler(async (req, res) => {
   const { name, email, password, role, phone, location } = req.body;
+
   if (!name || !email || !password) {
-    return res.status(400).json({ message: 'Name, email and password are required' });
+    throw new AppError('Name, email and password are required', 400);
+  }
+  if (!isValidEmail(email)) {
+    throw new AppError('Enter a valid email address', 400);
+  }
+  if (!isValidPassword(password)) {
+    throw new AppError('Password must be at least 8 characters', 400);
   }
 
-  const existing = await User.findOne({ email: email.toLowerCase() });
-  if (existing) return res.status(409).json({ message: 'Email already registered' });
+  const normalizedEmail = email.toLowerCase().trim();
+  const existing = await User.findOne({ email: normalizedEmail });
+  if (existing) throw new AppError('Email already registered', 409);
 
-  const hashed = await bcrypt.hash(password, 10);
-  const user = await User.create({
-    name,
-    email,
-    password: hashed,
-    role: ['farmer', 'buyer', 'admin'].includes(role) ? role : 'buyer',
-    phone,
-    location,
+  const hashed = await bcrypt.hash(password, SALT_ROUNDS);
+
+  let user;
+  try {
+    user = await User.create({
+      name: String(name).trim(),
+      email: normalizedEmail,
+      password: hashed,
+      role: normalizeRole(role),
+      phone,
+      location,
+      // Every new public registration requires admin approval.
+      approvalStatus: 'pending',
+    });
+  } catch (err) {
+    if (err.code === 11000) throw new AppError('Email already registered', 409);
+    throw err;
+  }
+
+  // Do not issue a JWT while the account is pending approval.
+  res.status(201).json({
+    message: 'Registration submitted successfully. Your account is awaiting administrator approval.',
+    user: user.toJSON(),
   });
+});
 
-  const token = signToken(user);
-  res.status(201).json({ token, user: sanitize(user) });
-}
-
-export async function login(req, res) {
+export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ message: 'Email and password are required' });
+  if (typeof email !== 'string' || typeof password !== 'string' || !email || !password) {
+    throw new AppError('Email and password are required', 400);
   }
 
-  const user = await User.findOne({ email: email.toLowerCase() });
-  if (!user) return res.status(401).json({ message: 'Invalid credentials' });
+  const normalizedEmail = email.toLowerCase().trim();
+  const user = await User.findOne({ email: normalizedEmail }).select('+password');
+  if (!user) throw new AppError('Invalid email or password', 401);
 
   const match = await bcrypt.compare(password, user.password);
-  if (!match) return res.status(401).json({ message: 'Invalid credentials' });
+  if (!match) throw new AppError('Invalid email or password', 401);
+
+  if (user.approvalStatus === 'pending') {
+    throw new AppError('Your account is awaiting administrator approval.', 403);
+  }
+  if (user.approvalStatus === 'rejected') {
+    throw new AppError(user.rejectionReason || 'Your account registration was not approved.', 403);
+  }
+  if (user.status === 'suspended') {
+    throw new AppError('This account has been suspended', 403);
+  }
 
   const token = signToken(user);
-  res.json({ token, user: sanitize(user) });
-}
+  res.json({ token, user: user.toJSON() });
+});
 
-export async function me(req, res) {
-  res.json({ user: req.user });
-}
+export const me = asyncHandler(async (req, res) => {
+  res.json({ user: req.user.toJSON() });
+});
 
-export async function updateMe(req, res) {
-  const { name, phone, location, avatarUrl } = req.body;
+export const updateMe = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
-  if (name !== undefined) user.name = name;
-  if (phone !== undefined) user.phone = phone;
-  if (location !== undefined) user.location = location;
-  if (avatarUrl !== undefined) user.avatarUrl = avatarUrl;
-  await user.save();
-  res.json({ user: sanitize(user) });
-}
+  if (!user) throw new AppError('User not found', 404);
 
-export async function changePassword(req, res) {
-  const { currentPassword, newPassword } = req.body;
-  if (!currentPassword || !newPassword) {
-    return res.status(400).json({ message: 'Current and new password are required' });
+  for (const field of EDITABLE_PROFILE_FIELDS) {
+    if (req.body[field] !== undefined) user[field] = req.body[field];
   }
-  const user = await User.findById(req.user._id);
-  const match = await bcrypt.compare(currentPassword, user.password);
-  if (!match) return res.status(401).json({ message: 'Current password is incorrect' });
+  await user.save();
+  res.json({ user: user.toJSON() });
+});
 
-  user.password = await bcrypt.hash(newPassword, 10);
+export const changePassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (typeof currentPassword !== 'string' || typeof newPassword !== 'string' || !currentPassword || !newPassword) {
+    throw new AppError('Current and new password are required', 400);
+  }
+  if (!isValidPassword(newPassword)) {
+    throw new AppError('New password must be at least 8 characters', 400);
+  }
+
+  const user = await User.findById(req.user._id).select('+password');
+  if (!user) throw new AppError('User not found', 404);
+
+  const match = await bcrypt.compare(currentPassword, user.password);
+  if (!match) throw new AppError('Current password is incorrect', 401);
+
+  const sameAsOld = await bcrypt.compare(newPassword, user.password);
+  if (sameAsOld) throw new AppError('New password must be different from the current password', 400);
+
+  user.password = await bcrypt.hash(newPassword, SALT_ROUNDS);
   await user.save();
   res.json({ message: 'Password updated' });
-}
+});

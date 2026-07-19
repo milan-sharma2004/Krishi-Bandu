@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Sprout,
@@ -28,6 +28,12 @@ const NAV_ITEMS = [
 
 export default function FarmerLayout() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  function handleLogout() {
+    logout();
+    navigate('/login', { replace: true });
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -56,17 +62,11 @@ export default function FarmerLayout() {
               <p className="text-sm font-semibold text-gray-900">{user?.name}</p>
               <p className="text-xs text-gray-500">{user?.location}</p>
             </div>
-            <img
-              src={user?.avatarUrl || `https://ui-avatars.com/api/?name=${user?.name}`}
-              alt={user?.name}
-              className="h-9 w-9 rounded-full object-cover"
-            />
             <button
-              onClick={logout}
-              className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
-              title="Log out"
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
-              <LogOut size={18} />
+              <LogOut size={15} /> Log out
             </button>
           </div>
         </div>

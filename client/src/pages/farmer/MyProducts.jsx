@@ -112,7 +112,9 @@ export default function MyProducts() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">My Products</h1>
-          <p className="text-sm text-gray-500">Manage your marketplace listings.</p>
+          <p className="text-sm text-gray-500">
+            Manage your marketplace listings. New listings appear on the buyer marketplace immediately.
+          </p>
         </div>
         <button
           onClick={() => (showForm ? setShowForm(false) : startNew())}

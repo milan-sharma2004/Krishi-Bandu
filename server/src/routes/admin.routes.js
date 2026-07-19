@@ -3,6 +3,7 @@ import {
   overview,
   listUsers,
   updateUserStatus,
+  updateUserApproval,
   deleteUser,
   listAdminProducts,
   updateProductStatus,
@@ -20,6 +21,7 @@ router.use(requireAuth, requireRole('admin'));
 router.get('/overview', overview);
 router.get('/users', listUsers);
 router.patch('/users/:id/status', updateUserStatus);
+router.patch('/users/:id/approval', updateUserApproval);
 router.delete('/users/:id', deleteUser);
 router.get('/products', listAdminProducts);
 router.patch('/products/:id/status', updateProductStatus);

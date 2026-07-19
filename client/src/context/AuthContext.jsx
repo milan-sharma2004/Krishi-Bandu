@@ -1,5 +1,16 @@
-import { createContext, useContext, useEffect, useState } from 'react';
-import api from '../api/client.js';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
+
+import api, {
+  getErrorMessage,
+  getToken,
+  setToken,
+} from '../api/client.js';
 
 const AuthContext = createContext(undefined);
 
@@ -7,55 +18,143 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const token = localStorage.getItem('kb_token');
+  const refreshUser = useCallback(async () => {
+    const token = getToken();
+
     if (!token) {
-      setLoading(false);
-      return;
+      setUser(null);
+      return null;
     }
-    api
-      .get('/auth/me')
-      .then((res) => setUser(res.data.user))
-      .catch(() => {
-        localStorage.removeItem('kb_token');
-      })
-      .finally(() => setLoading(false));
+
+    try {
+      const res = await api.get('/auth/me');
+
+      setUser(res.data.user);
+
+      return res.data.user;
+    } catch {
+      setToken(null);
+      setUser(null);
+
+      return null;
+    }
   }, []);
 
-  async function login(email, password) {
-    const res = await api.post('/auth/login', { email, password });
-    localStorage.setItem('kb_token', res.data.token);
+  useEffect(() => {
+    let active = true;
+
+    async function restoreSession() {
+      setLoading(true);
+
+      await refreshUser();
+
+      if (active) {
+        setLoading(false);
+      }
+    }
+
+    restoreSession();
+
+    return () => {
+      active = false;
+    };
+  }, [refreshUser]);
+
+  useEffect(() => {
+    function handleUnauthorized() {
+      setToken(null);
+      setUser(null);
+    }
+
+    window.addEventListener(
+      'kb:unauthorized',
+      handleUnauthorized
+    );
+
+    return () => {
+      window.removeEventListener(
+        'kb:unauthorized',
+        handleUnauthorized
+      );
+    };
+  }, []);
+
+  async function login(
+  email,
+  password,
+  rememberMe = false
+) {
+  try {
+    const res = await api.post('/auth/login', {
+      email,
+      password,
+    });
+
+    setToken(res.data.token, rememberMe);
     setUser(res.data.user);
+
     return res.data.user;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
   }
+}
 
   async function register(data) {
-    const res = await api.post('/auth/register', data);
-    localStorage.setItem('kb_token', res.data.token);
-    setUser(res.data.user);
-    return res.data.user;
+    try {
+      const res = await api.post('/auth/register', data);
+
+      // Do not save a token or log in automatically.
+      // The new account is pending admin approval.
+      return res.data;
+    } catch (error) {
+      throw new Error(getErrorMessage(error));
+    }
   }
 
   function logout() {
-    localStorage.removeItem('kb_token');
+    // setToken(null) should clear stored JWT and Axios header.
+    setToken(null);
     setUser(null);
   }
 
   async function updateProfile(data) {
-    const res = await api.put('/auth/me', data);
-    setUser(res.data.user);
-    return res.data.user;
+    try {
+      const res = await api.put('/auth/me', data);
+
+      setUser(res.data.user);
+
+      return res.data.user;
+    } catch (error) {
+      throw new Error(getErrorMessage(error));
+    }
   }
 
+  const value = {
+    user,
+    isAuthenticated: Boolean(user),
+    loading,
+    login,
+    register,
+    logout,
+    refreshUser,
+    updateProfile,
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updateProfile }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 }
 
 export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
-  return ctx;
+  const context = useContext(AuthContext);
+
+  if (!context) {
+    throw new Error(
+      'useAuth must be used within AuthProvider'
+    );
+  }
+
+  return context;
 }

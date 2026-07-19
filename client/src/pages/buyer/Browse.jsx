@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search } from 'lucide-react';
-import api from '../../api/client.js';
+import api, { getErrorMessage } from '../../api/client.js';
 import { mediaUrl } from '../../utils/mediaUrl.js';
 
 const CATEGORIES = ['All', 'Crops', 'Seeds', 'Organic', 'Tools'];
@@ -10,12 +10,32 @@ export default function Browse() {
   const [products, setProducts] = useState([]);
   const [category, setCategory] = useState('All');
   const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
+    let active = true;
     const params = {};
     if (category !== 'All') params.category = category;
     if (search) params.search = search;
-    api.get('/products', { params }).then((res) => setProducts(res.data));
+
+    setLoading(true);
+    setError('');
+    api
+      .get('/products', { params })
+      .then((res) => {
+        if (active) setProducts(res.data);
+      })
+      .catch((err) => {
+        if (active) setError(getErrorMessage(err));
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
   }, [category, search]);
 
   return (
@@ -49,21 +69,29 @@ export default function Browse() {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-        {products.map((p) => (
-          <Link key={p._id} to={`/buyer/products/${p._id}`} className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm hover:shadow-md">
-            <img src={mediaUrl(p.imageUrl) || 'https://placehold.co/200x140?text=%20'} alt={p.name} className="mb-2 h-28 w-full rounded-lg object-cover" />
-            <p className="truncate text-sm font-semibold text-gray-900">
-              {p.name} {p.variety && <span className="font-normal text-gray-500">({p.variety})</span>}
-            </p>
-            <p className="text-xs text-gray-500">{p.seller?.location}</p>
-            <p className="mt-1 text-sm font-bold text-primary-700">Rs {p.pricePerKg}/kg</p>
-          </Link>
-        ))}
-        {products.length === 0 && (
-          <p className="col-span-full py-10 text-center text-gray-400">No products found.</p>
-        )}
-      </div>
+      {loading && <p className="py-10 text-center text-gray-400">Loading products...</p>}
+
+      {!loading && error && (
+        <p className="rounded-xl border border-red-200 bg-red-50 py-6 text-center text-sm text-red-700">{error}</p>
+      )}
+
+      {!loading && !error && (
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          {products.map((p) => (
+            <Link key={p._id} to={`/buyer/products/${p._id}`} className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm hover:shadow-md">
+              <img src={mediaUrl(p.imageUrl) || 'https://placehold.co/200x140?text=%20'} alt={p.name} className="mb-2 h-28 w-full rounded-lg object-cover" />
+              <p className="truncate text-sm font-semibold text-gray-900">
+                {p.name} {p.variety && <span className="font-normal text-gray-500">({p.variety})</span>}
+              </p>
+              <p className="text-xs text-gray-500">{p.seller?.location}</p>
+              <p className="mt-1 text-sm font-bold text-primary-700">Rs {p.pricePerKg}/kg</p>
+            </Link>
+          ))}
+          {products.length === 0 && (
+            <p className="col-span-full py-10 text-center text-gray-400">No products found.</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

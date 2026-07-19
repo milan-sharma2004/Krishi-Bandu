@@ -1,131 +1,183 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Logo from '../../components/Logo.jsx';
-import { useAuth } from '../../context/AuthContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
+import { getRoleHomePath } from '../../utils/roleRedirect.js';
 
 export default function Register() {
-  const { register } = useAuth();
   const { notify } = useToast();
   const navigate = useNavigate();
-  const [form, setForm] = useState({
-    name: '',
-    email: '',
-    password: '',
-    role: 'farmer',
-    phone: '',
-    location: '',
-  });
+  const { user, loading, isAuthenticated, register } = useAuth();
+  const [role, setRole] = useState('buyer');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  function update(key, value) {
-    setForm((f) => ({ ...f, [key]: value }));
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      const user = await register(form);
-      if (user.role === 'farmer') navigate('/farmer');
-      else if (user.role === 'buyer') navigate('/buyer');
-      else navigate('/admin');
-      try {
-        notify(`Account created — welcome, ${user.name.split(' ')[0]}!`, 'success');
-      } catch {
-        // toast is a non-critical nicety; never let it affect the registration outcome
-      }
-    } catch (err) {
-      setError(err?.response?.data?.message || 'Registration failed');
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (!loading && isAuthenticated && user?.role) {
+      navigate(getRoleHomePath(user.role), { replace: true });
     }
+  }, [isAuthenticated, loading, navigate, user?.role]);
+
+ async function handleSubmit(e) {
+  e.preventDefault();
+
+  if (submitting) return;
+
+  setError('');
+
+  if (!name.trim() || !email.trim() || !password) {
+    setError('Please fill in all required fields.');
+    return;
   }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    setError('Please enter a valid email address.');
+    return;
+  }
+
+  if (password.length < 8) {
+    setError('Password must be at least 8 characters.');
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    setError('Passwords do not match.');
+    return;
+  }
+
+  setSubmitting(true);
+
+  try {
+    const result = await register({
+      name: name.trim(),
+      email: email.trim(),
+      password,
+      role,
+    });
+
+    notify(
+      result.message ||
+        'Registration submitted. Your account is awaiting administrator approval.',
+      'success'
+    );
+
+    navigate('/login', {
+      replace: true,
+      state: {
+        registrationPending: true,
+      },
+    });
+  } catch (err) {
+    const message =
+      err.message ||
+      'Unable to create your account. Please try again.';
+
+    setError(message);
+    notify(message, 'error');
+  } finally {
+    setSubmitting(false);
+  }
+}
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-10">
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-md">
         <div className="mb-8 flex justify-center">
           <Logo />
         </div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-          <h1 className="text-xl font-bold text-gray-900">Create your account</h1>
-          <p className="mt-1 text-sm text-gray-500">Join Krishi Bandu as a farmer or buyer</p>
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
+          <div className="mb-4">
+            <h1 className="text-xl font-bold text-gray-900">Create your account</h1>
+            <p className="mt-1 text-sm text-gray-500">Join Krishi Bandu as a buyer or seller</p>
+          </div>
 
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-            <div className="grid grid-cols-2 gap-2">
-              {['farmer', 'buyer'].map((r) => (
-                <button
-                  type="button"
-                  key={r}
-                  onClick={() => update('role', r)}
-                  className={`rounded-lg border py-2 text-sm font-medium capitalize ${
-                    form.role === r
-                      ? 'border-primary-600 bg-primary-50 text-primary-700'
-                      : 'border-gray-300 text-gray-600'
-                  }`}
-                >
-                  {r === 'farmer' ? 'Seller / Farmer' : 'Buyer / Consumer'}
-                </button>
-              ))}
-            </div>
+          <div className="mb-4 grid grid-cols-2 gap-2">
+            {['buyer', 'farmer'].map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => setRole(option)}
+                className={`rounded-full border px-3 py-2 text-sm font-medium ${role === option ? 'border-primary-600 bg-primary-50 text-primary-700' : 'border-gray-200 text-gray-600'}`}
+              >
+                {option === 'farmer' ? 'Seller / Farmer' : 'Buyer / Consumer'}
+              </button>
+            ))}
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Full name</label>
+              <label htmlFor="name" className="mb-1 block text-sm font-medium text-gray-700">
+                Full name
+              </label>
               <input
-                required
-                value={form.name}
-                onChange={(e) => update('name', e.target.value)}
+                id="name"
+                type="text"
+                autoComplete="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                placeholder="Your name"
               />
             </div>
+
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Email</label>
+              <label htmlFor="email" className="mb-1 block text-sm font-medium text-gray-700">
+                Email
+              </label>
               <input
+                id="email"
                 type="email"
-                required
-                value={form.email}
-                onChange={(e) => update('email', e.target.value)}
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                placeholder="you@example.com"
               />
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Phone</label>
-                <input
-                  value={form.phone}
-                  onChange={(e) => update('phone', e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Location</label>
-                <input
-                  value={form.location}
-                  onChange={(e) => update('location', e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                />
-              </div>
-            </div>
+
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Password</label>
+              <label htmlFor="password" className="mb-1 block text-sm font-medium text-gray-700">
+                Password
+              </label>
               <input
+                id="password"
                 type="password"
-                required
-                minLength={6}
-                value={form.password}
-                onChange={(e) => update('password', e.target.value)}
+                autoComplete="new-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                placeholder="At least 8 characters"
               />
             </div>
+
+            <div>
+              <label htmlFor="confirmPassword" className="mb-1 block text-sm font-medium text-gray-700">
+                Confirm password
+              </label>
+              <input
+                id="confirmPassword"
+                type="password"
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                placeholder="Re-enter your password"
+              />
+            </div>
+
             {error && <p className="text-sm text-red-600">{error}</p>}
+
             <button
               type="submit"
-              disabled={loading}
-              className="w-full rounded-lg bg-primary-600 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
+              disabled={submitting}
+              className="w-full rounded-full bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? 'Creating account...' : 'Sign Up'}
+              {submitting ? 'Creating account...' : 'Create account'}
             </button>
           </form>
 
