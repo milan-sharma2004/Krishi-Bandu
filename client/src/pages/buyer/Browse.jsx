@@ -1,13 +1,24 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { Search, Sprout, Wrench } from 'lucide-react';
 import api, { getErrorMessage } from '../../api/client.js';
 import { mediaUrl } from '../../utils/mediaUrl.js';
 
-const CATEGORIES = ['All', 'Crops', 'Seeds', 'Organic', 'Tools'];
+const OFFER_TYPES = [
+  { value: 'All', label: 'All' },
+  { value: 'product', label: 'Products' },
+  { value: 'service', label: 'Services' },
+];
+
+const CATEGORY_OPTIONS = {
+  All: ['All'],
+  product: ['All', 'Crops', 'Seeds', 'Organic', 'Tools'],
+  service: ['All', 'Tractor Service', 'Labor', 'Irrigation', 'Veterinary', 'Consultation', 'Other'],
+};
 
 export default function Browse() {
   const [products, setProducts] = useState([]);
+  const [offerType, setOfferType] = useState('All');
   const [category, setCategory] = useState('All');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -16,6 +27,7 @@ export default function Browse() {
   useEffect(() => {
     let active = true;
     const params = {};
+    if (offerType !== 'All') params.offerType = offerType;
     if (category !== 'All') params.category = category;
     if (search) params.search = search;
 
@@ -36,13 +48,18 @@ export default function Browse() {
     return () => {
       active = false;
     };
-  }, [category, search]);
+  }, [offerType, category, search]);
+
+  function selectOfferType(value) {
+    setOfferType(value);
+    setCategory('All');
+  }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Browse Products</h1>
-        <p className="text-sm text-gray-500">Fresh crops, seeds, organic inputs, and tools from local farmers.</p>
+        <h1 className="text-2xl font-bold text-gray-900">Browse Products &amp; Services</h1>
+        <p className="text-sm text-gray-500">Fresh crops, seeds, organic inputs, tools, and local services from farmers.</p>
       </div>
 
       <div className="relative">
@@ -50,13 +67,29 @@ export default function Browse() {
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search products..."
+          placeholder="Search products or services..."
           className="w-full rounded-full border border-gray-300 py-2.5 pl-9 pr-4 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
         />
       </div>
 
+      <div className="flex gap-2">
+        {OFFER_TYPES.map(({ value, label }) => (
+          <button
+            key={value}
+            onClick={() => selectOfferType(value)}
+            className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium ${
+              offerType === value ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            {value === 'product' && <Sprout size={14} />}
+            {value === 'service' && <Wrench size={14} />}
+            {label}
+          </button>
+        ))}
+      </div>
+
       <div className="flex gap-2 overflow-x-auto">
-        {CATEGORIES.map((c) => (
+        {CATEGORY_OPTIONS[offerType].map((c) => (
           <button
             key={c}
             onClick={() => setCategory(c)}
@@ -69,7 +102,7 @@ export default function Browse() {
         ))}
       </div>
 
-      {loading && <p className="py-10 text-center text-gray-400">Loading products...</p>}
+      {loading && <p className="py-10 text-center text-gray-400">Loading listings...</p>}
 
       {!loading && error && (
         <p className="rounded-xl border border-red-200 bg-red-50 py-6 text-center text-sm text-red-700">{error}</p>
@@ -84,11 +117,13 @@ export default function Browse() {
                 {p.name} {p.variety && <span className="font-normal text-gray-500">({p.variety})</span>}
               </p>
               <p className="text-xs text-gray-500">{p.seller?.location}</p>
-              <p className="mt-1 text-sm font-bold text-primary-700">Rs {p.pricePerKg}/kg</p>
+              <p className="mt-1 text-sm font-bold text-primary-700">
+                Rs {p.pricePerKg} / {p.unit || 'kg'}
+              </p>
             </Link>
           ))}
           {products.length === 0 && (
-            <p className="col-span-full py-10 text-center text-gray-400">No products found.</p>
+            <p className="col-span-full py-10 text-center text-gray-400">No listings found.</p>
           )}
         </div>
       )}

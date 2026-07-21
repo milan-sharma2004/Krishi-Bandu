@@ -7,6 +7,7 @@ import Register from './pages/public/Register.jsx';
 
 import FarmerLayout from './layouts/FarmerLayout.jsx';
 import FarmerDashboard from './pages/farmer/Dashboard.jsx';
+import FarmerSellerDashboard from './pages/farmer/SellerDashboard.jsx';
 import FarmerCrops from './pages/farmer/Crops.jsx';
 import FarmerWeather from './pages/farmer/Weather.jsx';
 import FarmerMarketPrices from './pages/farmer/MarketPrices.jsx';
@@ -31,6 +32,7 @@ import BuyerProfile from './pages/buyer/Profile.jsx';
 import AdminLayout from './layouts/AdminLayout.jsx';
 import AdminDashboard from './pages/admin/Dashboard.jsx';
 import AdminUsers from './pages/admin/Users.jsx';
+import AdminActivityLog from './pages/admin/ActivityLog.jsx';
 import AdminProducts from './pages/admin/Products.jsx';
 import AdminOrders from './pages/admin/Orders.jsx';
 import AdminServices from './pages/admin/Services.jsx';
@@ -55,6 +57,7 @@ function App() {
         }
       >
         <Route index element={<FarmerDashboard />} />
+        <Route path="seller-dashboard" element={<FarmerSellerDashboard />} />
         <Route path="crops" element={<FarmerCrops />} />
         <Route path="weather" element={<FarmerWeather />} />
         <Route path="market-prices" element={<FarmerMarketPrices />} />
@@ -95,6 +98,7 @@ function App() {
       >
         <Route index element={<AdminDashboard />} />
         <Route path="users" element={<AdminUsers />} />
+        <Route path="activity-log" element={<AdminActivityLog />} />
         <Route path="products" element={<AdminProducts />} />
         <Route path="orders" element={<AdminOrders />} />
         <Route path="services" element={<AdminServices />} />

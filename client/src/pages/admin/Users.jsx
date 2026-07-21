@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Search, Trash2 } from 'lucide-react';
 import api from '../../api/client.js';
 import { useToast } from '../../context/ToastContext.jsx';
 
@@ -22,6 +22,7 @@ export default function Users() {
 
   const [users, setUsers] = useState([]);
   const [roleFilter, setRoleFilter] = useState('All');
+  const [search, setSearch] = useState('');
 
   function load() {
     api
@@ -105,29 +106,48 @@ export default function Users() {
     }
   }
 
-  const filtered = roleFilter === 'All' ? users : users.filter((user) => user.role === roleFilter);
+  const filtered = users
+    .filter((user) => roleFilter === 'All' || user.role === roleFilter)
+    .filter((user) => {
+      const q = search.trim().toLowerCase();
+      if (!q) return true;
+      return user.name.toLowerCase().includes(q) || user.email.toLowerCase().includes(q);
+    });
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Users</h1>
 
-          <p className="text-sm text-gray-500">{users.length} total accounts</p>
+          <p className="text-sm text-gray-500">
+            {filtered.length} of {users.length} total accounts
+          </p>
         </div>
 
-        <select
-          value={roleFilter}
-          onChange={(event) => setRoleFilter(event.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-        >
-          <option value="All">All</option>
-          <option value="farmer">Farmer</option>
-          <option value="seller">Seller</option>
-          <option value="buyer">Buyer</option>
-          <option value="expert">Expert</option>
-          <option value="admin">Admin</option>
-        </select>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="relative">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search by name or email..."
+              className="w-full rounded-lg border border-gray-300 py-2 pl-8 pr-3 text-sm sm:w-64"
+            />
+          </div>
+          <select
+            value={roleFilter}
+            onChange={(event) => setRoleFilter(event.target.value)}
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          >
+            <option value="All">All roles</option>
+            <option value="farmer">Farmer</option>
+            <option value="seller">Seller</option>
+            <option value="buyer">Buyer</option>
+            <option value="expert">Expert</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">

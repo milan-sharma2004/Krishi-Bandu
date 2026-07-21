@@ -51,7 +51,7 @@ export default function Home() {
             <Link key={p._id} to={`/buyer/products/${p._id}`} className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm hover:shadow-md">
               <img src={mediaUrl(p.imageUrl) || 'https://placehold.co/200x140?text=%20'} alt={p.name} className="mb-2 h-24 w-full rounded-lg object-cover" />
               <p className="truncate text-sm font-semibold text-gray-900">{p.name}</p>
-              <p className="text-xs text-gray-500">Rs {p.pricePerKg}/kg</p>
+              <p className="text-xs text-gray-500">Rs {p.pricePerKg}/{p.unit || 'kg'}</p>
             </Link>
           ))}
         </div>

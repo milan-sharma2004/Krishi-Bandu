@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Minus, Plus, ShoppingCart, MapPin, User } from 'lucide-react';
+import { Minus, Plus, ShoppingCart, MapPin, User, Sprout, Wrench } from 'lucide-react';
 import api from '../../api/client.js';
 import { useCart } from '../../context/CartContext.jsx';
 import { mediaUrl } from '../../utils/mediaUrl.js';
@@ -35,14 +35,26 @@ export default function ProductDetail() {
         className="h-80 w-full rounded-2xl object-cover"
       />
       <div>
-        <p className="text-sm font-medium text-primary-600">{product.category}</p>
+        <div className="flex items-center gap-2">
+          <span
+            className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+              product.offerType === 'service' ? 'bg-teal-100 text-teal-700' : 'bg-primary-100 text-primary-700'
+            }`}
+          >
+            {product.offerType === 'service' ? <Wrench size={11} /> : <Sprout size={11} />}
+            {product.offerType === 'service' ? 'Service' : 'Product'}
+          </span>
+          <p className="text-sm font-medium text-primary-600">{product.category}</p>
+        </div>
         <h1 className="mt-1 text-2xl font-bold text-gray-900">
           {product.name} {product.variety && <span className="font-normal text-gray-500">({product.variety})</span>}
         </h1>
         <p className="mt-2 text-3xl font-bold text-gray-900">
           Rs {product.pricePerKg}
-          <span className="text-base font-normal text-gray-500"> / kg</span>
+          <span className="text-base font-normal text-gray-500"> / {product.unit || 'kg'}</span>
         </p>
+
+        {product.description && <p className="mt-3 text-sm text-gray-600">{product.description}</p>}
 
         <div className="mt-4 flex flex-wrap gap-4 text-sm text-gray-600">
           <span className="flex items-center gap-1">
@@ -55,7 +67,10 @@ export default function ProductDetail() {
           )}
         </div>
 
-        <p className="mt-2 text-sm text-gray-500">Available: {product.availableQty} kg · {product.listingType}</p>
+        <p className="mt-2 text-sm text-gray-500">
+          Available: {product.availableQty} {product.unit || 'kg'}
+          {product.offerType !== 'service' && <> · {product.listingType}</>}
+        </p>
 
         <div className="mt-6 flex items-center gap-4">
           <div className="flex items-center rounded-full border border-gray-300">
@@ -67,7 +82,7 @@ export default function ProductDetail() {
               <Plus size={16} />
             </button>
           </div>
-          <span className="text-sm text-gray-500">kg</span>
+          <span className="text-sm text-gray-500">{product.unit || 'kg'}</span>
         </div>
 
         <div className="mt-6 flex gap-3">

@@ -3,7 +3,9 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { AppError } from '../utils/AppError.js';
 
 const EDITABLE_FIELDS = [
+  'offerType',
   'name',
+  'description',
   'variety',
   'category',
   'pricePerKg',
@@ -14,6 +16,9 @@ const EDITABLE_FIELDS = [
   'listingType',
 ];
 
+const PRODUCT_CATEGORIES = ['Crops', 'Seeds', 'Organic', 'Tools'];
+const SERVICE_CATEGORIES = ['Tractor Service', 'Labor', 'Irrigation', 'Veterinary', 'Consultation', 'Other'];
+
 function pickEditableFields(body) {
   const data = {};
   for (const field of EDITABLE_FIELDS) {
@@ -23,9 +28,24 @@ function pickEditableFields(body) {
 }
 
 function validateListingInput(data, { partial = false } = {}) {
+  if (data.offerType !== undefined && !['product', 'service'].includes(data.offerType)) {
+    throw new AppError('Offer type must be either "product" or "service"', 400);
+  }
+
   if (!partial || data.name !== undefined) {
     if (!data.name || typeof data.name !== 'string' || !data.name.trim()) {
-      throw new AppError('Product name is required', 400);
+      throw new AppError('Title is required', 400);
+    }
+  }
+  if (!partial || data.description !== undefined) {
+    if (!data.description || typeof data.description !== 'string' || !data.description.trim()) {
+      throw new AppError('Description is required', 400);
+    }
+  }
+  if (!partial || data.category !== undefined) {
+    const allowedCategories = data.offerType === 'service' ? SERVICE_CATEGORIES : PRODUCT_CATEGORIES;
+    if (!data.category || !allowedCategories.includes(data.category)) {
+      throw new AppError(`Category must be one of: ${allowedCategories.join(', ')}`, 400);
     }
   }
   if (!partial || data.pricePerKg !== undefined) {
@@ -45,8 +65,9 @@ function validateListingInput(data, { partial = false } = {}) {
 }
 
 export const listProducts = asyncHandler(async (req, res) => {
-  const { category, search } = req.query;
+  const { category, search, offerType } = req.query;
   const filter = { status: 'active', availableQty: { $gt: 0 } };
+  if (offerType && offerType !== 'All') filter.offerType = offerType;
   if (category && category !== 'All') filter.category = category;
   if (search) filter.name = { $regex: search, $options: 'i' };
 

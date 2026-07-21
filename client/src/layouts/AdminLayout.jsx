@@ -14,6 +14,7 @@ import {
   Sprout,
   Menu,
   X,
+  History,
 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext.jsx';
@@ -29,6 +30,11 @@ const NAV_ITEMS = [
     to: '/admin/users',
     label: 'Users',
     icon: Users,
+  },
+  {
+    to: '/admin/activity-log',
+    label: 'Activity Log',
+    icon: History,
   },
   {
     to: '/admin/products',

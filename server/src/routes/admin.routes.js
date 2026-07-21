@@ -12,6 +12,7 @@ import {
   deleteOrderAdmin,
   getSettings,
   updateSettings,
+  listActivityLog,
 } from '../controllers/admin.controller.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 
@@ -30,5 +31,6 @@ router.patch('/orders/:id/status', updateOrderStatusAdmin);
 router.delete('/orders/:id', deleteOrderAdmin);
 router.get('/settings', getSettings);
 router.put('/settings', updateSettings);
+router.get('/activity-log', listActivityLog);
 
 export default router;

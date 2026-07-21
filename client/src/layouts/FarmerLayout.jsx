@@ -13,6 +13,7 @@ import {
   LifeBuoy,
   MoreHorizontal,
   ChevronDown,
+  BarChart3,
 } from 'lucide-react';
 import Logo from '../components/Logo.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -21,7 +22,8 @@ import { useWindowWidth } from '../hooks/useWindowWidth.js';
 // Ordered by priority: earlier items stay visible longest as the header shrinks.
 const NAV_ITEMS = [
   { to: '/farmer', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/farmer/products', label: 'My Products', icon: Package },
+  { to: '/farmer/seller-dashboard', label: 'Seller Dashboard', icon: BarChart3 },
+  { to: '/farmer/products', label: 'My Listings', icon: Package },
   { to: '/farmer/orders', label: 'Orders', icon: ClipboardList },
   { to: '/farmer/crops', label: 'Crops', icon: Sprout },
   { to: '/farmer/market-prices', label: 'Market Prices', icon: TrendingUp },

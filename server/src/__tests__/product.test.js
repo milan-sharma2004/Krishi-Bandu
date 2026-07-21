@@ -54,6 +54,7 @@ async function registerUser(overrides = {}) {
 function validListing(overrides = {}) {
   return {
     name: 'Fresh Tomatoes',
+    description: 'Vine-ripened hybrid tomatoes, harvested this morning.',
     variety: 'Hybrid',
     category: 'Crops',
     pricePerKg: 45,
@@ -121,6 +122,43 @@ describe('POST /api/products (create listing)', () => {
       .send(validListing({ availableQty: -5 }));
     expect(res.status).toBe(400);
   });
+
+  it('rejects a listing with a missing description', async () => {
+    const { token } = await registerUser();
+    const res = await request(app)
+      .post('/api/products')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validListing({ description: '' }));
+    expect(res.status).toBe(400);
+  });
+
+  it('creates a service listing with a service-specific category', async () => {
+    const { token } = await registerUser();
+    const res = await request(app)
+      .post('/api/products')
+      .set('Authorization', `Bearer ${token}`)
+      .send(
+        validListing({
+          name: 'Tractor Ploughing',
+          description: 'Half-day tractor ploughing for up to 2 ropani.',
+          offerType: 'service',
+          category: 'Tractor Service',
+          unit: 'visit',
+        })
+      );
+    expect(res.status).toBe(201);
+    expect(res.body.offerType).toBe('service');
+    expect(res.body.category).toBe('Tractor Service');
+  });
+
+  it('rejects a service listing using a product-only category', async () => {
+    const { token } = await registerUser();
+    const res = await request(app)
+      .post('/api/products')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validListing({ offerType: 'service', category: 'Crops' }));
+    expect(res.status).toBe(400);
+  });
 });
 
 describe('GET /api/products (buyer marketplace)', () => {
@@ -136,6 +174,33 @@ describe('GET /api/products (buyer marketplace)', () => {
     const found = res.body.find((p) => p._id === created.body._id);
     expect(found).toBeTruthy();
     expect(found.name).toBe('Marketplace Visible Crop');
+  });
+
+  it('filters by offerType', async () => {
+    const { token } = await registerUser();
+    await request(app)
+      .post('/api/products')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validListing({ name: 'A Crop' }));
+    await request(app)
+      .post('/api/products')
+      .set('Authorization', `Bearer ${token}`)
+      .send(
+        validListing({
+          name: 'A Service',
+          offerType: 'service',
+          category: 'Labor',
+          unit: 'hour',
+        })
+      );
+
+    const services = await request(app).get('/api/products').query({ offerType: 'service' });
+    expect(services.body).toHaveLength(1);
+    expect(services.body[0].name).toBe('A Service');
+
+    const products = await request(app).get('/api/products').query({ offerType: 'product' });
+    expect(products.body).toHaveLength(1);
+    expect(products.body[0].name).toBe('A Crop');
   });
 
   it('excludes listings marked inactive', async () => {

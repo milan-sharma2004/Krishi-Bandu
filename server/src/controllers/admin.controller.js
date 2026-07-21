@@ -2,6 +2,8 @@ import User from '../models/User.js';
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import Setting from '../models/Setting.js';
+import ActivityLog from '../models/ActivityLog.js';
+import { logActivity } from '../utils/logActivity.js';
 
 export async function overview(_req, res) {
   const [totalUsers, totalSellers, totalBuyers, totalOrders, totalProducts] = await Promise.all([
@@ -37,6 +39,13 @@ export async function updateUserStatus(req, res) {
   const { status } = req.body;
   const user = await User.findByIdAndUpdate(req.params.id, { status }, { new: true });
   if (!user) return res.status(404).json({ message: 'User not found' });
+
+  await logActivity({
+    admin: req.user,
+    action: status === 'active' ? 'user.activated' : 'user.suspended',
+    targetUser: user,
+  });
+
   res.json(user);
 }
 
@@ -69,6 +78,15 @@ export async function updateUserApproval(req, res) {
   }
   await user.save();
 
+  if (approvalStatus === 'approved' || approvalStatus === 'rejected') {
+    await logActivity({
+      admin: req.user,
+      action: approvalStatus === 'approved' ? 'user.approved' : 'user.rejected',
+      targetUser: user,
+      details: approvalStatus === 'rejected' ? user.rejectionReason : '',
+    });
+  }
+
   res.json({
     message:
       approvalStatus === 'approved'
@@ -84,6 +102,8 @@ export async function deleteUser(req, res) {
   const target = await User.findById(req.params.id);
   if (!target) return res.status(404).json({ message: 'User not found' });
   if (target.role === 'admin') return res.status(403).json({ message: 'Cannot delete an admin account' });
+
+  await logActivity({ admin: req.user, action: 'user.deleted', targetUser: target });
   await target.deleteOne();
   res.json({ message: 'User deleted' });
 }
@@ -123,6 +143,11 @@ export async function deleteOrderAdmin(req, res) {
   const order = await Order.findByIdAndDelete(req.params.id);
   if (!order) return res.status(404).json({ message: 'Order not found' });
   res.json({ message: 'Order deleted' });
+}
+
+export async function listActivityLog(_req, res) {
+  const entries = await ActivityLog.find().sort({ createdAt: -1 }).limit(200);
+  res.json(entries);
 }
 
 export async function getSettings(_req, res) {

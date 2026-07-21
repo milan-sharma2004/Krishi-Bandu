@@ -82,7 +82,7 @@ export default function SellerShop() {
                 {p.name} {p.variety && <span className="font-normal text-gray-500">({p.variety})</span>}
               </p>
               <p className="text-xs text-gray-500">{p.location}</p>
-              <p className="mt-1 text-sm font-bold text-primary-700">Rs {p.pricePerKg}/kg</p>
+              <p className="mt-1 text-sm font-bold text-primary-700">Rs {p.pricePerKg}/{p.unit || 'kg'}</p>
             </Link>
           ))}
           {products.length === 0 && (
