@@ -8,7 +8,7 @@ import { mediaUrl } from '../../utils/mediaUrl.js';
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { addItem } = useCart();
+  const { addItem, setItem } = useCart();
   const [product, setProduct] = useState(null);
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
@@ -94,7 +94,7 @@ export default function ProductDetail() {
           </button>
           <Link
             to="/buyer/cart"
-            onClick={() => addItem(product, qty)}
+            onClick={() => setItem(product, qty)}
             className="flex items-center justify-center rounded-full border border-gray-300 px-6 text-sm font-semibold text-gray-700 hover:bg-gray-50"
           >
             Buy Now

@@ -1,6 +1,9 @@
-import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Sprout, Users, ShoppingBag, ShieldCheck, ArrowRight } from 'lucide-react';
 import Logo from '../../components/Logo.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
+import { getRoleHomePath } from '../../utils/roleRedirect.js';
 
 const ROLES = [
   {
@@ -35,6 +38,19 @@ const FEATURES = [
 ];
 
 export default function Landing() {
+  const navigate = useNavigate();
+  const { user, loading, isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    if (!loading && isAuthenticated && user?.role) {
+      navigate(getRoleHomePath(user.role), { replace: true });
+    }
+  }, [isAuthenticated, loading, navigate, user?.role]);
+
+  if (loading || isAuthenticated) {
+    return <div className="flex h-screen items-center justify-center text-gray-500">Loading...</div>;
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <header className="border-b border-gray-100">

@@ -34,10 +34,16 @@ const NAV_ITEMS = [
   { to: '/farmer/support', label: 'Support', icon: LifeBuoy },
 ];
 
+// Thresholds are sized conservatively so the pills + logo + avatar never
+// overflow the header before the "More" menu kicks in — most laptop screens
+// (including MacBook Pro/Air) report a logical width well under their
+// physical resolution, so "wide-looking" screens can still be under 1536px.
 function visibleCountFor(width) {
-  if (width >= 1280) return NAV_ITEMS.length;
-  if (width >= 1024) return 6;
-  if (width >= 768) return 4;
+  if (width >= 1800) return NAV_ITEMS.length; // 11 — only very wide/external monitors
+  if (width >= 1536) return 9;
+  if (width >= 1280) return 7;
+  if (width >= 1024) return 5;
+  if (width >= 768) return 3;
   if (width >= 640) return 2;
   return 1;
 }

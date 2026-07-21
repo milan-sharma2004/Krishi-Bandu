@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Truck, ChevronDown } from 'lucide-react';
 import api from '../../api/client.js';
 import { useToast } from '../../context/ToastContext.jsx';
@@ -83,7 +84,9 @@ export default function Orders() {
           <div key={o._id} className="rounded-xl border border-gray-200 bg-white shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-3 p-4">
               <div>
-                <p className="font-semibold text-gray-900">Order #{o.orderCode}</p>
+                <Link to={`/farmer/orders/${o._id}`} className="font-semibold text-primary-600 hover:underline">
+                  Order #{o.orderCode}
+                </Link>
                 <p className="text-xs text-gray-500">
                   {o.buyer?.name} · {o.buyer?.location} · {new Date(o.createdAt).toLocaleDateString()}
                 </p>

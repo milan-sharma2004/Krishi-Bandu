@@ -30,6 +30,19 @@ export function CartProvider({ children }) {
     });
   }
 
+  // Sets the cart quantity for a product outright instead of adding on top of
+  // whatever's already there. Used by "Buy Now" so clicking it after "Add to
+  // Cart" reflects the selected quantity once, rather than stacking both.
+  function setItem(product, quantity) {
+    setItems((prev) => {
+      const existing = prev.find((i) => i.product._id === product._id);
+      if (existing) {
+        return prev.map((i) => (i.product._id === product._id ? { ...i, quantity } : i));
+      }
+      return [...prev, { product, quantity }];
+    });
+  }
+
   function removeItem(productId) {
     setItems((prev) => prev.filter((i) => i.product._id !== productId));
   }
@@ -45,7 +58,7 @@ export function CartProvider({ children }) {
   const total = items.reduce((sum, i) => sum + i.quantity * i.product.pricePerKg, 0);
 
   return (
-    <CartContext.Provider value={{ items, addItem, removeItem, updateQuantity, clear, total }}>
+    <CartContext.Provider value={{ items, addItem, setItem, removeItem, updateQuantity, clear, total }}>
       {children}
     </CartContext.Provider>
   );

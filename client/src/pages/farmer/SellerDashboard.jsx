@@ -176,7 +176,9 @@ export default function SellerDashboard() {
               className="flex flex-col gap-2 rounded-xl border border-gray-200 bg-white p-3.5 shadow-sm sm:flex-row sm:items-center sm:justify-between"
             >
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-gray-900">#{o.orderCode}</p>
+                <Link to={`/farmer/orders/${o._id}`} className="text-sm font-semibold text-primary-600 hover:underline">
+                  #{o.orderCode}
+                </Link>
                 <p className="truncate text-xs text-gray-500">
                   {o.buyer?.name} · {o.items.length} item{o.items.length === 1 ? '' : 's'} · Rs {o.totalAmount} · {new Date(o.createdAt).toLocaleDateString()}
                 </p>

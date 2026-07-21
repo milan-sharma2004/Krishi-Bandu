@@ -13,13 +13,45 @@ export async function createOrder(req, res) {
   const productDocs = await Product.find({ _id: { $in: items.map((i) => i.product) } });
   if (!productDocs.length) return res.status(400).json({ message: 'Invalid products' });
 
+  // Validate quantities and stock before reserving anything.
+  for (const i of items) {
+    const p = productDocs.find((pd) => pd._id.toString() === i.product);
+    if (!p) return res.status(400).json({ message: 'One or more items are no longer available' });
+    const qty = Number(i.quantity);
+    if (!Number.isFinite(qty) || qty <= 0) {
+      return res.status(400).json({ message: `Invalid quantity for ${p.name}` });
+    }
+    if (qty > p.availableQty) {
+      return res.status(400).json({ message: `Only ${p.availableQty} ${p.unit || 'kg'} of ${p.name} available` });
+    }
+  }
+
+  // Reserve stock atomically (conditional on availableQty still being enough)
+  // so two buyers racing for the same last units can't both succeed. Anything
+  // already reserved gets rolled back if a later item fails to reserve.
+  const reserved = [];
+  for (const i of items) {
+    const qty = Number(i.quantity);
+    const updated = await Product.findOneAndUpdate(
+      { _id: i.product, availableQty: { $gte: qty } },
+      { $inc: { availableQty: -qty } }
+    );
+    if (!updated) {
+      await Promise.all(
+        reserved.map((r) => Product.updateOne({ _id: r.product }, { $inc: { availableQty: r.qty } }))
+      );
+      return res.status(409).json({ message: 'Stock changed while placing your order. Please review your cart and try again.' });
+    }
+    reserved.push({ product: i.product, qty });
+  }
+
   const itemsBySeller = new Map();
   for (const i of items) {
     const p = productDocs.find((pd) => pd._id.toString() === i.product);
     if (!p) continue;
     const sellerId = p.seller.toString();
     if (!itemsBySeller.has(sellerId)) itemsBySeller.set(sellerId, []);
-    itemsBySeller.get(sellerId).push({ product: p._id, name: p.name, quantity: i.quantity, price: p.pricePerKg });
+    itemsBySeller.get(sellerId).push({ product: p._id, name: p.name, quantity: Number(i.quantity), price: p.pricePerKg });
   }
 
   const orders = await Promise.all(

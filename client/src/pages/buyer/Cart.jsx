@@ -65,14 +65,23 @@ export default function Cart() {
               <p className="font-semibold text-gray-900">{product.name}</p>
               <p className="text-sm text-gray-500">Rs {product.pricePerKg}/kg</p>
             </div>
-            <div className="flex items-center rounded-full border border-gray-300">
-              <button onClick={() => updateQuantity(product._id, Math.max(1, quantity - 1))} className="p-2 text-gray-500">
-                <Minus size={14} />
-              </button>
-              <span className="w-8 text-center text-sm font-semibold">{quantity}</span>
-              <button onClick={() => updateQuantity(product._id, quantity + 1)} className="p-2 text-gray-500">
-                <Plus size={14} />
-              </button>
+            <div>
+              <div className="flex items-center rounded-full border border-gray-300">
+                <button onClick={() => updateQuantity(product._id, Math.max(1, quantity - 1))} className="p-2 text-gray-500">
+                  <Minus size={14} />
+                </button>
+                <span className="w-8 text-center text-sm font-semibold">{quantity}</span>
+                <button
+                  onClick={() => updateQuantity(product._id, Math.min(product.availableQty, quantity + 1))}
+                  disabled={quantity >= product.availableQty}
+                  className="p-2 text-gray-500 disabled:cursor-not-allowed disabled:opacity-30"
+                >
+                  <Plus size={14} />
+                </button>
+              </div>
+              {quantity >= product.availableQty && (
+                <p className="mt-1 text-center text-[11px] text-amber-600">Max {product.availableQty} available</p>
+              )}
             </div>
             <p className="w-20 text-right font-semibold text-gray-900">Rs {product.pricePerKg * quantity}</p>
             <button onClick={() => removeItem(product._id)} className="text-gray-400 hover:text-red-500">
