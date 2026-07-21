@@ -1,4 +1,5 @@
-import { LogOut, Mail, Phone, MapPin } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { LogOut, Mail, Phone, MapPin, MessageSquareWarning, ChevronRight } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 
 export default function Profile() {
@@ -27,6 +28,15 @@ export default function Profile() {
           <MapPin size={16} className="text-gray-400" /> {user?.location || 'Not provided'}
         </div>
       </div>
+
+      <Link
+        to="/buyer/complaints"
+        className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-5 text-sm font-medium text-gray-700 shadow-sm hover:border-primary-300 hover:shadow-md"
+      >
+        <MessageSquareWarning size={18} className="text-gray-400" />
+        <span className="flex-1">Complaints</span>
+        <ChevronRight size={16} className="text-gray-400" />
+      </Link>
 
       <button
         onClick={logout}

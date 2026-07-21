@@ -19,6 +19,7 @@ import FarmerOrders from './pages/farmer/Orders.jsx';
 import FarmerOrderDetail from './pages/farmer/OrderDetail.jsx';
 import FarmerSupport from './pages/farmer/Support.jsx';
 import FarmerProfile from './pages/farmer/Profile.jsx';
+import Complaints from './pages/shared/Complaints.jsx';
 
 import BuyerLayout from './layouts/BuyerLayout.jsx';
 import BuyerHome from './pages/buyer/Home.jsx';
@@ -41,6 +42,7 @@ import AdminShops from './pages/admin/Shops.jsx';
 import AdminReports from './pages/admin/Reports.jsx';
 import AdminAdvisories from './pages/admin/Advisories.jsx';
 import AdminSettings from './pages/admin/Settings.jsx';
+import AdminComplaints from './pages/admin/Complaints.jsx';
 
 function App() {
   return (
@@ -69,6 +71,7 @@ function App() {
         <Route path="orders" element={<FarmerOrders />} />
         <Route path="orders/:id" element={<FarmerOrderDetail />} />
         <Route path="support" element={<FarmerSupport />} />
+        <Route path="complaints" element={<Complaints />} />
         <Route path="profile" element={<FarmerProfile />} />
       </Route>
 
@@ -87,6 +90,7 @@ function App() {
         <Route path="cart" element={<BuyerCart />} />
         <Route path="orders" element={<BuyerOrders />} />
         <Route path="orders/:id" element={<BuyerOrderDetail />} />
+        <Route path="complaints" element={<Complaints />} />
         <Route path="profile" element={<BuyerProfile />} />
       </Route>
 
@@ -107,6 +111,7 @@ function App() {
         <Route path="shops" element={<AdminShops />} />
         <Route path="reports" element={<AdminReports />} />
         <Route path="advisories" element={<AdminAdvisories />} />
+        <Route path="complaints" element={<AdminComplaints />} />
         <Route path="settings" element={<AdminSettings />} />
       </Route>
 

@@ -18,6 +18,7 @@ import weatherRoutes from './routes/weather.routes.js';
 import recommendationRoutes from './routes/recommendation.routes.js';
 import uploadRoutes from './routes/upload.routes.js';
 import sellerRoutes from './routes/seller.routes.js';
+import complaintRoutes from './routes/complaint.routes.js';
 
 export function createApp() {
   const app = express();
@@ -79,6 +80,7 @@ app.use(
   app.use('/api/recommendations', recommendationRoutes);
   app.use('/api/uploads', uploadRoutes);
   app.use('/api/sellers', sellerRoutes);
+  app.use('/api/complaints', complaintRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

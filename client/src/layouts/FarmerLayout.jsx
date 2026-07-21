@@ -14,6 +14,7 @@ import {
   MoreHorizontal,
   ChevronDown,
   BarChart3,
+  MessageSquareWarning,
 } from 'lucide-react';
 import Logo from '../components/Logo.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -32,6 +33,7 @@ const NAV_ITEMS = [
   { to: '/farmer/shops', label: 'Shops', icon: Store },
   { to: '/farmer/services', label: 'Services', icon: Wrench },
   { to: '/farmer/support', label: 'Support', icon: LifeBuoy },
+  { to: '/farmer/complaints', label: 'Complaints', icon: MessageSquareWarning },
 ];
 
 // Thresholds are sized conservatively so the pills + logo + avatar never
@@ -39,7 +41,7 @@ const NAV_ITEMS = [
 // (including MacBook Pro/Air) report a logical width well under their
 // physical resolution, so "wide-looking" screens can still be under 1536px.
 function visibleCountFor(width) {
-  if (width >= 1800) return NAV_ITEMS.length; // 11 — only very wide/external monitors
+  if (width >= 1800) return NAV_ITEMS.length; // 12 — only very wide/external monitors
   if (width >= 1536) return 9;
   if (width >= 1280) return 7;
   if (width >= 1024) return 5;
