@@ -4,6 +4,7 @@ import ProtectedRoute from './components/ProtectedRoute.jsx';
 import Landing from './pages/public/Landing.jsx';
 import Login from './pages/public/Login.jsx';
 import Register from './pages/public/Register.jsx';
+import PrivacyPolicy from './pages/public/PrivacyPolicy.jsx';
 
 import FarmerLayout from './layouts/FarmerLayout.jsx';
 import FarmerDashboard from './pages/farmer/Dashboard.jsx';
@@ -50,6 +51,7 @@ function App() {
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
       <Route
         path="/farmer"

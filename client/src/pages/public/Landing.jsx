@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Sprout, Users, ShoppingBag, ShieldCheck, ArrowRight } from 'lucide-react';
+import { Sprout, Users, ShoppingBag, ArrowRight } from 'lucide-react';
 import Logo from '../../components/Logo.jsx';
+import Footer from '../../components/Footer.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { getRoleHomePath } from '../../utils/roleRedirect.js';
 
@@ -17,12 +18,6 @@ const ROLES = [
     title: 'Buyer / Consumer',
     desc: 'Browse products, compare prices, and place orders',
     color: 'bg-blue-600',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Admin',
-    desc: 'Manage users, monitor system, and generate reports',
-    color: 'bg-purple-600',
   },
 ];
 
@@ -101,7 +96,7 @@ export default function Landing() {
         <h2 className="mb-6 text-center text-sm font-semibold uppercase tracking-wide text-gray-500">
           User Roles
         </h2>
-        <div className="grid gap-5 sm:grid-cols-3">
+        <div className="mx-auto grid max-w-2xl gap-5 sm:grid-cols-2">
           {ROLES.map(({ icon: Icon, title, desc, color }) => (
             <div key={title} className="rounded-2xl border border-gray-200 p-6">
               <span className={`mb-4 flex h-11 w-11 items-center justify-center rounded-full ${color} text-white`}>
@@ -131,9 +126,7 @@ export default function Landing() {
         </div>
       </section>
 
-      <footer className="bg-primary-700 py-6 text-center text-sm text-primary-50">
-        Krishi Bandu — Trusted by Nepali Farmers, Supporting Smarter Agriculture.
-      </footer>
+      <Footer />
     </div>
   );
 }
