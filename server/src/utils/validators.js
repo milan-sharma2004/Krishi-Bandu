@@ -3,11 +3,23 @@ const ALLOWED_ROLES = ['farmer', 'seller', 'buyer', 'expert', 'admin'];
 const PUBLIC_ROLES = ['farmer', 'seller', 'buyer'];
 
 export function isValidEmail(email) {
-  return typeof email === 'string' && EMAIL_RE.test(email.trim());
+  if (typeof email !== 'string') {
+    return false;
+  }
+
+  return /^[^\s@]+@(gmail\.com|krishibandu\.com)$/i.test(
+    email.trim()
+  );
 }
 
 export function isValidPassword(password) {
-  return typeof password === 'string' && password.length >= 8;
+  if (typeof password !== 'string') {
+    return false;
+  }
+
+  return /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])(?=\S+$).{8,}$/.test(
+    password
+  );
 }
 
 export function normalizeRole(role) {
