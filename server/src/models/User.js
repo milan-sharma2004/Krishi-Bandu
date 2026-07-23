@@ -46,6 +46,18 @@ const userSchema = new mongoose.Schema(
       type: String,
     },
 
+    shopName: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+
+    shopDescription: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+
     status: {
       type: String,
       enum: ['active', 'suspended'],

@@ -16,31 +16,33 @@ const EDITABLE_PROFILE_FIELDS = [
   'phone',
   'location',
   'avatarUrl',
+  'shopName',
+  'shopDescription',
 ];
 
 export const register = asyncHandler(async (req, res) => {
   const { name, email, password, role, phone, location } = req.body;
 
+  if (!name || !email || !password) {
+    throw new AppError(
+      'Name, email and password are required',
+      400
+    );
+  }
+
   if (!isValidEmail(email)) {
-  throw new AppError(
-    'Email must end with @gmail.com or @krishibandu.com',
-    400
-  );
-}
+    throw new AppError(
+      'Email must end with @gmail.com or @krishibandu.com',
+      400
+    );
+  }
 
-if (!isValidPassword(password)) {
-  throw new AppError(
-    'Password must be at least 8 characters and include one uppercase letter, one number and one special character',
-    400
-  );
-}
-
-  if (!isValidPassword(newPassword)) {
-  throw new AppError(
-    'New password must be at least 8 characters and include one uppercase letter, one number and one special character',
-    400
-  );
-}
+  if (!isValidPassword(password)) {
+    throw new AppError(
+      'Password must be at least 8 characters and include one uppercase letter, one number and one special character',
+      400
+    );
+  }
 
   const normalizedEmail = email.toLowerCase().trim();
 
