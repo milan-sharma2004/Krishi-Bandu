@@ -35,23 +35,39 @@ async function registerUser(overrides = {}) {
     .post('/api/auth/register')
     .send({
       name: 'Ravi Kumar',
-      email: 'ravi@example.com',
-      password: 'password123',
+      email: 'ravi@gmail.com',
+      password: 'Password1!',
       role: 'farmer',
       ...overrides,
     });
 }
 
+// New registrations are pending until an admin approves them, so most tests
+// that need a usable token approve the account directly in the DB first.
+async function approveUser(email) {
+  await User.updateOne({ email }, { approvalStatus: 'approved' });
+}
+
+async function registerAndLogin(overrides = {}) {
+  const email = overrides.email || 'ravi@gmail.com';
+  const password = overrides.password || 'Password1!';
+  await registerUser(overrides);
+  await approveUser(email);
+  const res = await request(app).post('/api/auth/login').send({ email, password });
+  return res.body.token;
+}
+
 describe('POST /api/auth/register', () => {
-  it('registers a new user and returns a token without the password hash', async () => {
+  it('registers a new user as pending approval, without issuing a token', async () => {
     const res = await registerUser();
     expect(res.status).toBe(201);
-    expect(res.body.token).toBeTypeOf('string');
-    expect(res.body.user.email).toBe('ravi@example.com');
+    expect(res.body.token).toBeUndefined();
+    expect(res.body.user.email).toBe('ravi@gmail.com');
     expect(res.body.user.password).toBeUndefined();
+    expect(res.body.user.approvalStatus).toBe('pending');
 
-    const stored = await User.findOne({ email: 'ravi@example.com' }).select('+password');
-    expect(stored.password).not.toBe('password123');
+    const stored = await User.findOne({ email: 'ravi@gmail.com' }).select('+password');
+    expect(stored.password).not.toBe('Password1!');
   });
 
   it('rejects duplicate registration with 409', async () => {
@@ -59,27 +75,42 @@ describe('POST /api/auth/register', () => {
     const res = await registerUser();
     expect(res.status).toBe(409);
 
-    const count = await User.countDocuments({ email: 'ravi@example.com' });
+    const count = await User.countDocuments({ email: 'ravi@gmail.com' });
     expect(count).toBe(1);
   });
 
-  it('rejects invalid registration data with 400', async () => {
-    const res = await registerUser({ email: 'not-an-email' });
+  it('rejects an email outside the gmail.com / krishibandu.com domains with 400', async () => {
+    const res = await registerUser({ email: 'ravi@example.com' });
     expect(res.status).toBe(400);
   });
 
-  it('rejects a weak password with 400', async () => {
-    const res = await registerUser({ email: 'weak@example.com', password: '123' });
+  it('rejects a password that does not meet the complexity rules with 400', async () => {
+    const res = await registerUser({ email: 'weak@gmail.com', password: 'weakpass' });
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects registration missing required fields with 400', async () => {
+    const res = await request(app).post('/api/auth/register').send({ email: 'nofields@gmail.com' });
     expect(res.status).toBe(400);
   });
 });
 
 describe('POST /api/auth/login', () => {
-  it('logs in with valid credentials', async () => {
+  it('rejects login while the account is still pending approval', async () => {
     await registerUser();
     const res = await request(app)
       .post('/api/auth/login')
-      .send({ email: 'ravi@example.com', password: 'password123' });
+      .send({ email: 'ravi@gmail.com', password: 'Password1!' });
+    expect(res.status).toBe(403);
+    expect(res.body.message).toMatch(/approval/i);
+  });
+
+  it('logs in with valid credentials once approved', async () => {
+    await registerUser();
+    await approveUser('ravi@gmail.com');
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'ravi@gmail.com', password: 'Password1!' });
     expect(res.status).toBe(200);
     expect(res.body.token).toBeTypeOf('string');
     expect(res.body.user.password).toBeUndefined();
@@ -87,9 +118,10 @@ describe('POST /api/auth/login', () => {
 
   it('rejects invalid credentials with a generic 401 message', async () => {
     await registerUser();
+    await approveUser('ravi@gmail.com');
     const res = await request(app)
       .post('/api/auth/login')
-      .send({ email: 'ravi@example.com', password: 'wrongpassword' });
+      .send({ email: 'ravi@gmail.com', password: 'WrongPassword1!' });
     expect(res.status).toBe(401);
     expect(res.body.message).toMatch(/invalid/i);
   });
@@ -97,7 +129,7 @@ describe('POST /api/auth/login', () => {
   it('returns the same generic error for a non-existent email', async () => {
     const res = await request(app)
       .post('/api/auth/login')
-      .send({ email: 'nobody@example.com', password: 'password123' });
+      .send({ email: 'nobody@gmail.com', password: 'Password1!' });
     expect(res.status).toBe(401);
     expect(res.body.message).toMatch(/invalid/i);
   });
@@ -115,20 +147,18 @@ describe('protected routes', () => {
   });
 
   it('accepts requests with a valid token and returns the current user', async () => {
-    const register = await registerUser();
-    const token = register.body.token;
+    const token = await registerAndLogin();
 
     const res = await request(app).get('/api/auth/me').set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(200);
-    expect(res.body.user.email).toBe('ravi@example.com');
+    expect(res.body.user.email).toBe('ravi@gmail.com');
     expect(res.body.user.password).toBeUndefined();
   });
 });
 
 describe('PUT /api/auth/me', () => {
   it('updates editable fields but ignores role escalation attempts', async () => {
-    const register = await registerUser();
-    const token = register.body.token;
+    const token = await registerAndLogin();
 
     const res = await request(app)
       .put('/api/auth/me')
@@ -141,41 +171,52 @@ describe('PUT /api/auth/me', () => {
 
     const loginWithOldPassword = await request(app)
       .post('/api/auth/login')
-      .send({ email: 'ravi@example.com', password: 'password123' });
+      .send({ email: 'ravi@gmail.com', password: 'Password1!' });
     expect(loginWithOldPassword.status).toBe(200);
+  });
+
+  it('updates shopName and shopDescription', async () => {
+    const token = await registerAndLogin();
+
+    const res = await request(app)
+      .put('/api/auth/me')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ shopName: 'Ravi Organic Farm', shopDescription: 'Fresh produce, straight from the field.' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.user.shopName).toBe('Ravi Organic Farm');
+    expect(res.body.user.shopDescription).toBe('Fresh produce, straight from the field.');
   });
 });
 
 describe('POST /api/auth/change-password', () => {
   it('rejects an incorrect current password', async () => {
-    const register = await registerUser();
-    const token = register.body.token;
+    const token = await registerAndLogin();
 
     const res = await request(app)
       .post('/api/auth/change-password')
       .set('Authorization', `Bearer ${token}`)
-      .send({ currentPassword: 'wrongpassword', newPassword: 'newpassword123' });
+      .send({ currentPassword: 'WrongPassword1!', newPassword: 'NewPassword1!' });
     expect(res.status).toBe(401);
   });
 
   it('changes the password and invalidates the old one', async () => {
-    const register = await registerUser();
-    const token = register.body.token;
+    const token = await registerAndLogin();
 
     const changeRes = await request(app)
       .post('/api/auth/change-password')
       .set('Authorization', `Bearer ${token}`)
-      .send({ currentPassword: 'password123', newPassword: 'newpassword123' });
+      .send({ currentPassword: 'Password1!', newPassword: 'NewPassword1!' });
     expect(changeRes.status).toBe(200);
 
     const oldLogin = await request(app)
       .post('/api/auth/login')
-      .send({ email: 'ravi@example.com', password: 'password123' });
+      .send({ email: 'ravi@gmail.com', password: 'Password1!' });
     expect(oldLogin.status).toBe(401);
 
     const newLogin = await request(app)
       .post('/api/auth/login')
-      .send({ email: 'ravi@example.com', password: 'newpassword123' });
+      .send({ email: 'ravi@gmail.com', password: 'NewPassword1!' });
     expect(newLogin.status).toBe(200);
   });
 });
@@ -183,18 +224,18 @@ describe('POST /api/auth/change-password', () => {
 describe('suspended accounts', () => {
   it('rejects login for a suspended account', async () => {
     await registerUser();
-    await User.updateOne({ email: 'ravi@example.com' }, { status: 'suspended' });
+    await approveUser('ravi@gmail.com');
+    await User.updateOne({ email: 'ravi@gmail.com' }, { status: 'suspended' });
 
     const res = await request(app)
       .post('/api/auth/login')
-      .send({ email: 'ravi@example.com', password: 'password123' });
+      .send({ email: 'ravi@gmail.com', password: 'Password1!' });
     expect(res.status).toBe(403);
   });
 
   it('rejects an existing valid token once the account is suspended', async () => {
-    const register = await registerUser();
-    const token = register.body.token;
-    await User.updateOne({ email: 'ravi@example.com' }, { status: 'suspended' });
+    const token = await registerAndLogin();
+    await User.updateOne({ email: 'ravi@gmail.com' }, { status: 'suspended' });
 
     const res = await request(app).get('/api/auth/me').set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(401);
@@ -203,23 +244,22 @@ describe('suspended accounts', () => {
 
 describe('role-protected routes', () => {
   it('rejects a non-admin user accessing an admin-only route with 403', async () => {
-    const register = await registerUser({ role: 'buyer', email: 'buyer@example.com' });
-    const token = register.body.token;
+    const token = await registerAndLogin({ role: 'buyer', email: 'buyer@gmail.com' });
 
     const res = await request(app).get('/api/admin/overview').set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(403);
   });
 
   it('does not allow self-registration to grant the admin role', async () => {
-    const register = await registerUser({ role: 'admin', email: 'wannabe-admin@example.com' });
+    const register = await registerUser({ role: 'admin', email: 'wannabe-admin@gmail.com' });
     expect(register.body.user.role).not.toBe('admin');
   });
 
   it('allows an admin user to access an admin-only route', async () => {
-    const passwordHash = await bcrypt.hash('password123', 4);
+    const passwordHash = await bcrypt.hash('Password1!', 4);
     const admin = await User.create({
       name: 'Admin User',
-      email: 'admin@example.com',
+      email: 'admin@gmail.com',
       password: passwordHash,
       role: 'admin',
     });

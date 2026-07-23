@@ -31,16 +31,24 @@ beforeEach(async () => {
 });
 
 async function registerUser(overrides = {}) {
-  const res = await request(app)
+  const email = overrides.email || 'seller-one@gmail.com';
+  const password = overrides.password || 'Password1!';
+
+  const registerRes = await request(app)
     .post('/api/auth/register')
     .send({
       name: 'Seller One',
-      email: 'seller-one@example.com',
-      password: 'password123',
+      email,
+      password,
       role: 'farmer',
       ...overrides,
     });
-  return { token: res.body.token, user: res.body.user };
+
+  // New registrations are pending until an admin approves them.
+  await User.updateOne({ email }, { approvalStatus: 'approved' });
+
+  const loginRes = await request(app).post('/api/auth/login').send({ email, password });
+  return { token: loginRes.body.token, user: registerRes.body.user };
 }
 
 function validListing(overrides = {}) {
@@ -79,7 +87,7 @@ describe('POST /api/products (create listing)', () => {
   });
 
   it('rejects creation from a buyer role with 403', async () => {
-    const { token } = await registerUser({ role: 'buyer', email: 'buyer-only@example.com' });
+    const { token } = await registerUser({ role: 'buyer', email: 'buyer-only@gmail.com' });
     const res = await request(app)
       .post('/api/products')
       .set('Authorization', `Bearer ${token}`)
@@ -170,8 +178,8 @@ describe('GET /api/products (buyer marketplace)', () => {
 
 describe('GET /api/products/mine (seller listing management)', () => {
   it('returns only the authenticated seller\'s own listings', async () => {
-    const sellerA = await registerUser({ email: 'seller-a@example.com' });
-    const sellerB = await registerUser({ email: 'seller-b@example.com' });
+    const sellerA = await registerUser({ email: 'seller-a@gmail.com' });
+    const sellerB = await registerUser({ email: 'seller-b@gmail.com' });
 
     await request(app)
       .post('/api/products')
@@ -191,8 +199,8 @@ describe('GET /api/products/mine (seller listing management)', () => {
 
 describe('ownership enforcement on update/delete', () => {
   it('does not allow a seller to update another seller\'s listing', async () => {
-    const sellerA = await registerUser({ email: 'seller-a@example.com' });
-    const sellerB = await registerUser({ email: 'seller-b@example.com' });
+    const sellerA = await registerUser({ email: 'seller-a@gmail.com' });
+    const sellerB = await registerUser({ email: 'seller-b@gmail.com' });
 
     const created = await request(app)
       .post('/api/products')
@@ -210,8 +218,8 @@ describe('ownership enforcement on update/delete', () => {
   });
 
   it('does not allow a seller to delete another seller\'s listing', async () => {
-    const sellerA = await registerUser({ email: 'seller-a@example.com' });
-    const sellerB = await registerUser({ email: 'seller-b@example.com' });
+    const sellerA = await registerUser({ email: 'seller-a@gmail.com' });
+    const sellerB = await registerUser({ email: 'seller-b@gmail.com' });
 
     const created = await request(app)
       .post('/api/products')
