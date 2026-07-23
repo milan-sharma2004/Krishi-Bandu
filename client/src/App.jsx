@@ -43,6 +43,7 @@ function App() {
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
       <Route
         path="/farmer"
@@ -61,7 +62,7 @@ function App() {
         <Route path="shops" element={<FarmerShops />} />
         <Route path="products" element={<FarmerProducts />} />
         <Route path="support" element={<FarmerSupport />} />
-        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        
       </Route>
 
       <Route
